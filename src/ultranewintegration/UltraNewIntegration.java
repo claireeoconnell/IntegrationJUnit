@@ -39,7 +39,6 @@ package ultranewintegration;
 
 import java.text.DecimalFormat;
 
-
 /**
  * This program integrates using three methods: the trapezoidal method,
  * Simpson's Three Point Integration, and Boole's Five Point Integration
@@ -48,69 +47,74 @@ import java.text.DecimalFormat;
  */
 public class UltraNewIntegration {
 
-    private final static double[] x = new double[202];
+    private final static double[] x = new double[201];
+    private static final double DEFAULT_WIDTH = 0.005;
+
     static {
-        x[0] = 0;
+        /*x[0] = 0;
         for (int i = 1; i < 201; i++) {
-            x[i] = .0025+.005*(i-1);  
+            x[i] = .0025 + .005 * (i - 1);
         }
-        x[201] = 1;
+        x[201] = 1;*/
+        for (int i = 0; i < x.length; i++) {
+            x[i] = i * DEFAULT_WIDTH;
+        }
     }
-    
+
     public static void main(String[] args) {
         double testAnswer;
-        double testTrap,testTrapRight,avgTrap,avgTrapError;
-        double testSimp,testSimpRight, avgSimp, avgSimpError;
-        double testBoole,testBooleRight,avgBoole,avgBooleError;
+        double testTrap, testTrapRight, avgTrap, avgTrapError;
+        double testSimp, testSimpRight, avgSimp, avgSimpError;
+        double testBoole, testBooleRight, avgBoole, avgBooleError;
         double testRect, testRectRight, avgRect, avgRectError;
         DecimalFormat decimalFormat = new DecimalFormat("#.00");
-        
+
         testAnswer = 2.98393938659796;
         System.out.print("The test case answer is " + testAnswer + "\n\n");
-        
-        testRect = rectangularMethodLeft(generateTestData_v1()); 
+
+        testRect = rectangularMethodLeft(generateTestData_v1());
         //System.out.print("Testing rectangular left " + testRect + "\n");
         testRectRight = rectangularMethodRight(generateTestData_v1());
         //System.out.print("Testing rectangular right " + testRectRight + "\n");
-        avgRect = (testRect + testRectRight)/2.0;
+        avgRect = (testRect + testRectRight) / 2.0;
         //System.out.print("Average rectangular " + avgRect + "\n");
-        avgRectError = Math.abs(testAnswer - avgRect)/testAnswer*100;
+        avgRectError = Math.abs(testAnswer - avgRect) / testAnswer * 100;
         //System.out.print("Average rectangular error " + decimalFormat.format(avgRectError) + "%\n");
-        
+
         testTrap = trapInputLeft(generateTestData_v1());
         //System.out.print("Testing trapezoid left " + testTrap + "\n");
-        testTrapRight = trapInputRight(generateTestData_v1()); 
+        testTrapRight = trapInputRight(generateTestData_v1());
         //System.out.print("Testing trapezoid right " + testTrapRight + "\n");
-        avgTrap = (testTrap+testTrapRight)/2.0;
+        avgTrap = (testTrap + testTrapRight) / 2.0;
         //System.out.print("Average trap " + avgTrap + "\n");
         avgTrapError = Math.abs(avgTrap - testAnswer) / testAnswer * 100;
         //System.out.print("Avg Trapezoidal error  " + decimalFormat.format(avgTrapError) + "%\n");
-        
-        testSimp = SimpsonsLeft(generateTestData_v1()) + HalfBinComposite(generateTestData_v1(),1,"left");
+
+        testSimp = simpsonsLeft(generateTestData_v1()) + HalfBinComposite(generateTestData_v1(), IntegrationType.SIMPSONS, IntegrationSide.LEFT);
         //System.out.print("Testing Simpsons left " + testSimp + "\n");
-        testSimpRight = SimpsonsRight(generateTestData_v1()) + HalfBinComposite(generateTestData_v1(),1,"right");
+        testSimpRight = simpsonsRight(generateTestData_v1()) + HalfBinComposite(generateTestData_v1(), IntegrationType.SIMPSONS, IntegrationSide.RIGHT);
         //System.out.print("Testing Simpsons right " + testSimpRight + "\n");
-        avgSimp = (testSimp+testSimpRight)/2.0;
+        avgSimp = (testSimp + testSimpRight) / 2.0;
         //System.out.print("Average Simpsons " + avgSimp + "\n");
-        avgSimpError = Math.abs(testAnswer - avgSimp)/testAnswer*100;
+        avgSimpError = Math.abs(testAnswer - avgSimp) / testAnswer * 100;
         //System.out.print("Average Simpsons error " + decimalFormat.format(avgSimpError) + "%\n");
-        
-        testBoole = BooleLeft(generateTestData_v1()) + HalfBinComposite(generateTestData_v1(),2,"left");
+
+        testBoole = booleLeft(generateTestData_v1()) + HalfBinComposite(generateTestData_v1(), IntegrationType.BOOLE, IntegrationSide.LEFT);
         //System.out.print("Testing Boole left " + testBoole + "\n");
-        testBooleRight = BooleRight(generateTestData_v1()) + HalfBinComposite(generateTestData_v1(),2,"right");
+        testBooleRight = booleRight(generateTestData_v1()) + HalfBinComposite(generateTestData_v1(), IntegrationType.BOOLE, IntegrationSide.RIGHT);
         //System.out.print("Testing Boole Right " + testBooleRight + "\n");
-        avgBoole = (testBoole+testBooleRight)/2.0;
+        avgBoole = (testBoole + testBooleRight) / 2.0;
         //System.out.print("Average Boole " + avgBoole + "\n");
-        avgBooleError = Math.abs(testAnswer - avgBoole)/testAnswer*100;
+        avgBooleError = Math.abs(testAnswer - avgBoole) / testAnswer * 100;
         //System.out.print("Average Boole error " + decimalFormat.format(avgBooleError) + "%\n");
-        
+
         //Average integrals
         System.out.print("Average integrals \n\n");
         System.out.print("Average rectangular " + avgRect + "\n");
         System.out.print("Average trap " + avgTrap + "\n");
         System.out.print("Average Simpsons " + avgSimp + "\n");
         System.out.print("Average Boole " + avgBoole + "\n");
-        
+
         //Average integral errors
         System.out.print("\nAverage integral error \n\n");
         System.out.print("Average rectangular error " + decimalFormat.format(avgRectError) + "%\n");
@@ -129,7 +133,7 @@ public class UltraNewIntegration {
 
     public static double[] generateTestData_v1() {
         double y[] = new double[202];
-       
+
         for (int i = 0; i < 202; i++) {
             y[i] = 10 * Math.sin(6 * x[i]) - 7 * Math.cos(5 * x[i]) + 11 * Math.sin(8 * x[i]);
         }
@@ -137,62 +141,62 @@ public class UltraNewIntegration {
         return y;
     }
 
-    public static double HalfBinComposite(double[] inputData, int mode, String side){
+    public static double HalfBinComposite(double[] inputData, IntegrationType type, IntegrationSide side) {
         double halfBinComposite = 0, lowerHalfBin, upperHalfBin, upperTrapArea;
         double lowerTrapArea, upperSimpson, lowerSimpson;
         int n;
-        
-        n=inputData.length;
-        
+
+        n = inputData.length;
+
         //Split by side first, then integration type
-        if (side == "left"){
+        if (side == IntegrationSide.LEFT) {
             //using trapezoidal integral for lower half bin
-            lowerHalfBin = (inputData[1]+inputData[0])/2.0*(x[1]-x[0]);
+            lowerHalfBin = (inputData[1] + inputData[0]) / 2.0 * (x[1] - x[0]);
             halfBinComposite += lowerHalfBin;
             //System.out.print("lower bin " + halfBinComposite + "\n");
-        switch(mode){
-            //case 1 is the Simpson's method, uses trapezoid on right for bin left out of Simpson's
-            case 1:
-                upperTrapArea = (inputData[n-3]+inputData[n-2])/2.0*(x[n-2]-x[n-3]);
-                //System.out.print("upper trap area " + upperTrapArea + "\n");
-                halfBinComposite += upperTrapArea;
-                break;
-            //case 2 is the Boole's method, uses Simpsons and trapezoidal integral on right to cover remaining bins
-            case 2:
-                upperSimpson = (1.0 / 3.0) * (x[n-4] - x[n-5]) * (inputData[n-5] + 4 * inputData[n-4] + inputData[n-3]);
-                halfBinComposite += upperSimpson;
-                //System.out.print("Upper Simpson " + upperSimpson + "\n");
-                upperTrapArea = (inputData[n - 3] + inputData[n - 2]) / 2.0 * (x[n - 2] - x[n - 3]);
-                //System.out.print("upper trap area " + upperTrapArea + "\n");
-                halfBinComposite += upperTrapArea;
-                break;
-        }
-        }else if (side == "right"){
+            switch (type) {
+                //case 1 is the Simpson's method, uses trapezoid on right for bin left out of Simpson's
+                case SIMPSONS:
+                    upperTrapArea = (inputData[n - 3] + inputData[n - 2]) / 2.0 * (x[n - 2] - x[n - 3]);
+                    //System.out.print("upper trap area " + upperTrapArea + "\n");
+                    halfBinComposite += upperTrapArea;
+                    break;
+                //case 2 is the Boole's method, uses Simpsons and trapezoidal integral on right to cover remaining bins
+                case BOOLE:
+                    upperSimpson = (1.0 / 3.0) * (x[n - 4] - x[n - 5]) * (inputData[n - 5] + 4 * inputData[n - 4] + inputData[n - 3]);
+                    halfBinComposite += upperSimpson;
+                    //System.out.print("Upper Simpson " + upperSimpson + "\n");
+                    upperTrapArea = (inputData[n - 3] + inputData[n - 2]) / 2.0 * (x[n - 2] - x[n - 3]);
+                    //System.out.print("upper trap area " + upperTrapArea + "\n");
+                    halfBinComposite += upperTrapArea;
+                    break;
+            }
+        } else if (side == IntegrationSide.RIGHT) {
             //upper half bin calculated with trapezoid
-            upperHalfBin = (inputData[n-1]+inputData[n-2])/2.0*(x[n-1]-x[n-2]);
+            upperHalfBin = (inputData[n - 1] + inputData[n - 2]) / 2.0 * (x[n - 1] - x[n - 2]);
             halfBinComposite += upperHalfBin;
-            switch(mode){
-            //case 1 is the Simpson's method, uses trapezoid on left for bin left out of Simpson's
-            case 1:
-                lowerTrapArea = (inputData[1]+inputData[2])/2.0*(x[2]-x[1]);
-                halfBinComposite += lowerTrapArea;
-                break;
-            //case 2 is the Boole's method, uses Simpsons and trapezoidal integral on left to cover remaining bins
-            case 2:
-                lowerTrapArea = (inputData[1]+inputData[2])/2.0*(x[2]-x[1]);
-                halfBinComposite += lowerTrapArea;
-                lowerSimpson = (1.0 / 3.0) * (x[3] - x[2]) * (inputData[2] + 4 * inputData[3] + inputData[4]);
-                halfBinComposite += lowerSimpson;
-                break;
-        }
+            switch (type) {
+                //case 1 is the Simpson's method, uses trapezoid on left for bin left out of Simpson's
+                case SIMPSONS:
+                    lowerTrapArea = (inputData[1] + inputData[2]) / 2.0 * (x[2] - x[1]);
+                    halfBinComposite += lowerTrapArea;
+                    break;
+                //case 2 is the Boole's method, uses Simpsons and trapezoidal integral on left to cover remaining bins
+                case BOOLE:
+                    lowerTrapArea = (inputData[1] + inputData[2]) / 2.0 * (x[2] - x[1]);
+                    halfBinComposite += lowerTrapArea;
+                    lowerSimpson = (1.0 / 3.0) * (x[3] - x[2]) * (inputData[2] + 4 * inputData[3] + inputData[4]);
+                    halfBinComposite += lowerSimpson;
+                    break;
+            }
         }
         //System.out.print("Half bin composite " + halfBinComposite + "\n");
         return halfBinComposite;
     }
-    
-    public static double trapInputLeft(double[] inputData) {
+
+    public static double trapInputLeft(double[] inputData, double width) {
         double trapIntegral = 0, sum, area, total;
-    
+
         int n = 0;
 
         n = x.length;
@@ -217,8 +221,8 @@ public class UltraNewIntegration {
 
         return trapIntegral;
     }
-    
-        public static double trapInputRight(double[] inputData) {
+
+    public static double trapInputRight(double[] inputData, double width) {
         double trapIntegral = 0, sum, area, total;
         int n = 0;
 
@@ -246,122 +250,203 @@ public class UltraNewIntegration {
         return trapIntegral;
     }
 
-
-
-    public static double SimpsonsLeft(double[] inputData){
-        double normalSimpsons=0, area, sum, total;
+    public static double simpsonsLeft(double[] inputData, double width) {
+        double normalSimpsons = 0, area, sum, total;
         int n;
-        
+
         n = inputData.length;
-        
+
         sum = 0;
         total = 0;
         for (int a = 1; a < n - 4; a += 2) {
-                area = (1.0 / 3.0) * (x[a + 1] - x[a]) * (inputData[a] + 4 * inputData[a + 1] + inputData[a + 2]);
-                normalSimpsons += area;
-                /*if (a == n-5){
-                    System.out.print("Last Simpson's left starts at n-5 \n");
-                }
-                */
-                         //With half bin, goes into n-5
+            area = (1.0 / 3.0) * (x[a + 1] - x[a]) * (inputData[a] + 4 * inputData[a + 1] + inputData[a + 2]);
+            normalSimpsons += area;
+            /*if (a == n-5){
+             System.out.print("Last Simpson's left starts at n-5 \n");
+             }
+             */
+            //With half bin, goes into n-5
         }
-        
+
         return normalSimpsons;
     }
-    
-    public static double SimpsonsRight(double[] inputData){
-        double normalSimpsons=0, area;
+
+    public static double simpsonsRight(double[] inputData, double width) {
+        double normalSimpsons = 0, area;
         int n;
-        
+
         n = inputData.length;
-        
+
         for (int a = 2; a < n - 3; a += 2) { //extra trap on lower edge so right edge of rightmost bin aligns with the upper half bin
-                area = (1.0 / 3.0) * (x[a + 1] - x[a]) * (inputData[a] + 4 * inputData[a + 1] + inputData[a + 2]);
-                normalSimpsons += area;
-                /*if (a == n-4){ 
-                    System.out.print("Last Simpson's right starts at n-4\n");
-                }
-                */
-                         
+            area = (1.0 / 3.0) * (x[a + 1] - x[a]) * (inputData[a] + 4 * inputData[a + 1] + inputData[a + 2]);
+            normalSimpsons += area;
+            /*if (a == n-4){ 
+             System.out.print("Last Simpson's right starts at n-4\n");
+             }
+             */
+
         }
-        
+
         return normalSimpsons;
     }
-    
-    public static double BooleLeft(double[] inputData){
-        double normalBoole=0, area;
+
+    public static double booleLeft(double[] inputData, double width) {
+        double normalBoole = 0, area;
         int n;
-        
+
         n = inputData.length;
-        
-        
+
         for (int a = 1; a < n - 5; a += 4) {
             area = (2.0 / 45.0) * (x[a + 1] - x[a]) * (7 * inputData[a] + 32 * inputData[a + 1] + 12 * inputData[a + 2] + 32 * inputData[a + 3] + 7 * inputData[a + 4]);
             normalBoole += area;
-            
+
             /*if (a == n - 9) { //interval not compatible with 201 bins because of the half sized bin on the end
-                System.out.print("Last Boole's left starts at n-9 \n"); 
-            }
-            */
+             System.out.print("Last Boole's left starts at n-9 \n"); 
+             }
+             */
         }
-        
+
         return normalBoole;
     }
     
-    public static double BooleRight(double[] inputData){
-        double normalBoole=0, area;
+    @Deprecated
+    public static double booleRight(double[] inputData) {
+        return booleRight(inputData, DEFAULT_WIDTH);
+    }
+
+    public static double booleRight(double[] inputData, double width) {
+        double normalBoole = 0, area;
         int n;
-        
+
         n = inputData.length;
-        
-        
+
         for (int a = 4; a < n - 5; a += 4) { //Simpsons and trapezoid + lower bin on left
             area = (2.0 / 45.0) * (x[a + 1] - x[a]) * (7 * inputData[a] + 32 * inputData[a + 1] + 12 * inputData[a + 2] + 32 * inputData[a + 3] + 7 * inputData[a + 4]);
             normalBoole += area;
-            
+
             /*if (a == n - 6) { //extra Simpsons on left edge so right edge of rightmost bin aligns with the upper half bin
-                System.out.print("Last Boole's right starts at n-6 \n"); 
-            }
-                    */
+             System.out.print("Last Boole's right starts at n-6 \n"); 
+             }
+             */
         }
-        
+
         return normalBoole;
     }
     
+    private static double finishIntegrationLeft(double[] inputData, int pos, IntegrationType maxLevel, double width) {
+        int nBins = inputData.length;
+        int remainingBins = nBins - pos;
+        double[] subset = new double[remainingBins];
+        System.arraycopy(inputData, pos, subset, 0, remainingBins);
+        
+        int levelwidth = maxLevel.binsConsumed();
+        int fullBins = remainingBins / levelwidth;
+        
+        double area = 0;
+        if (fullBins > 0) {
+            switch (maxLevel) {
+                case BOOLE:
+                    area = booleLeft(subset, width);
+                    break;
+                case SIMPSONS:
+                    area = simpsonsLeft(subset, width);
+                    break;
+                case TRAPEZOIDAL:
+                    area = trapInputLeft(subset, width);
+                    break;
+                case RECTANGULAR:
+                    area = rectangularMethodLeft(subset, width);
+                    break;
+            }
+        }
+        
+        pos += (levelwidth * fullBins);
+        subset = new double[remainingBins];
+        System.arraycopy(inputData, pos, subset, 0, remainingBins);
+        switch(remainingBins) {
+            case 1:
+                break;
+        }
+    }
+    
+    @Deprecated
     public static double rectangularMethodLeft(double[] inputData) {
-        double rectangularIntegral = 0, area;
-        double[] y = new double [202];
+        return rectangularMethodLeft(inputData, DEFAULT_WIDTH);
+    }
+
+    public static double rectangularMethodLeft(double[] inputData, double width) {
+        /*double rectangularIntegral = 0, area;
+        double[] y = new double[202];
         int n;
-        
+
         n = inputData.length;
-        
+
         y = generateTestData_v1();
 
-        for (int a = 0; a < n-2; a++) {
+        for (int a = 0; a < n - 2; a++) {
             area = (x[a + 1] - x[a]) * y[a];
             rectangularIntegral += area;
         }
 
         //System.out.print("The left rectangular method is " + rectangularIntegral + "\n");
-        return rectangularIntegral;
+        return rectangularIntegral;*/
+        int n = inputData.length;
+        double area = 0.0;
+        for (int a = 0; a < n-1; a++) {
+            area += (inputData[a] * width);
+        }
+        return area;
+    }
+    
+    @Deprecated
+    public static double rectangularMethodRight(double[] inputData) {
+        return rectangularMethodRight(inputData, DEFAULT_WIDTH);
     }
 
-    public static double rectangularMethodRight(double[] inputData) {
-        double rectangularIntegral = 0, area = 0;
+    public static double rectangularMethodRight(double[] inputData, double width) {
+        /*double rectangularIntegral = 0, area = 0;
         double[] y = new double[202];
         int n;
-        
+
         n = inputData.length;
 
         y = generateTestData_v1();
 
-        for (int a = 1; a < n-1; a++) {
+        for (int a = 1; a < n - 1; a++) {
             area = (x[a + 1] - x[a]) * y[a];
             rectangularIntegral += area;
         }
 
         //System.out.print("The right rectangular method is " + rectangularIntegral + "\n");
-        return rectangularIntegral;
+        return rectangularIntegral;*/
+        int n = inputData.length;
+        double area = 0.0;
+        for (int a = n-1; a > 0; a--) {
+            area += (inputData[a] * width);
+        }
+        return area;
+    }
+
+    public static enum IntegrationSide {
+
+        LEFT, RIGHT
+    }
+
+    public static enum IntegrationType {
+
+        //RECTANGULAR, TRAPEZOIDAL, SIMPSONS, BOOLE, UNK
+        RECTANGULAR(1),
+        TRAPEZOIDAL(2),
+        SIMPSONS(3),
+        BOOLE(4);
+        
+        private final int requiredBins;
+        IntegrationType(int bins) {
+            requiredBins = bins;
+        }
+        
+        public final int binsConsumed() {
+            return requiredBins;
+        }
     }
 }
-
