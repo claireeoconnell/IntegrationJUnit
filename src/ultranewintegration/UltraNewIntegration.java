@@ -52,6 +52,7 @@ public class UltraNewIntegration {
     private final static double[] x = new double[201];
     private static final double DEFAULT_WIDTH = 0.005;
     private static final double ONE_THIRD = (1.0 / 3.0);
+    private static final double BOOLE_FACTOR = (2.0 / 45.0);
 
     static {
         /*x[0] = 0;
@@ -186,6 +187,36 @@ public class UltraNewIntegration {
 
         return y;
     }
+    
+    /**
+     * Generates a set of points along x.
+     * @param lb Beginning value, inclusive
+     * @param ub Ending value, inclusive
+     * @param nPoints Total number of points
+     * @param halfWidthEnds If ends should have 1/2 regular separation
+     * @return 
+     */
+    public static double[] generateXPoints(double lb, double ub, int nPoints, boolean halfWidthEnds) {
+        if (lb >= ub) {
+            throw new IllegalArgumentException("ub must be greater than lb");
+        }
+        double[] points = new double[nPoints];
+        int sepDivisor = halfWidthEnds ? nPoints - 2 : nPoints - 1;
+        double sep = (ub - lb) / ((double) sepDivisor);
+        
+        if (halfWidthEnds) {
+            points[0] = lb;
+            points[nPoints-1] = ub;
+            for (int i = 1; i < nPoints - 1; i++) {
+                points[i] = lb + ((double) i)*sep - 0.5*sep;
+            }
+        } else {
+            for (int i = 0; i < nPoints; i++) {
+                points[i] = lb + ((double) i)*sep;
+            }
+        }
+        return points;
+    }
 
     public static double HalfBinComposite(double[] inputData, IntegrationType type, IntegrationSide side) {
         double halfBinComposite = 0, lowerHalfBin, upperHalfBin, upperTrapArea;
@@ -254,12 +285,11 @@ public class UltraNewIntegration {
     }
     
     public static double trapezoidal(DataSet data, IntegrationSide side, int lb, int ub) {
-        double area = 0;
         int nPoints = data.numPoints();
         double width = data.binWidth();
         double[] points = data.getAllPoints();
         
-        area = 0.5 * points[lb];
+        double area = 0.5 * points[lb];
         area += 0.5 * points[ub];
         for (int i = lb + 1; i < ub; i++) {
             area += points[i];
@@ -347,28 +377,28 @@ public class UltraNewIntegration {
 
     public static double simpsons(DataSet data, IntegrationSide side, int lb, int ub) {
         double area = 0;
-        int nPoints = data.numPoints();
         double width = data.binWidth();
         double[] points = data.getAllPoints();
+        int increment = 2;
         
-        int nBins = (ub - lb) / 2;
+        int nBins = (ub - lb) / increment;
         int lowerNeglected;
         int upperNeglected;
         
         switch (side) {
             case RIGHT:
-                for (int i = ub; i > (lb + 1); i -= 2) {
+                for (int i = ub; i > (lb + increment - 1); i -= increment) {
                     area += points[i] + (4*points[i-1]) + points[i-2];
                 }
                 lowerNeglected = lb;
-                upperNeglected = ub - (2*nBins);
+                upperNeglected = ub - (increment*nBins);
                 break;
             case LEFT:
             default:
-                for (int i = lb; i < (ub-1); i+= 2) {
+                for (int i = lb; i < (ub - increment + 1); i+= increment) {
                     area += points[i] + (4*points[i+1]) + points[i+2];
                 }
-                lowerNeglected = lb + (2*nBins);
+                lowerNeglected = lb + (increment*nBins);
                 upperNeglected = ub;
                 break;
         }
@@ -380,7 +410,6 @@ public class UltraNewIntegration {
     }
     
     private static double finishIntegration(DataSet data, IntegrationSide side, int lb, int ub, IntegrationType type) {
-        double width = data.binWidth();
         int totPoints = (ub - lb);
         
         int perBin = type.binsNeeded();
@@ -392,6 +421,9 @@ public class UltraNewIntegration {
         
         IntegrateWindow intMode;
         switch (type) {
+            case BOOLE:
+                intMode = UltraNewIntegration::booles;
+                break;
             case SIMPSONS:
                 intMode = UltraNewIntegration::simpsons;
                 break;
@@ -399,7 +431,6 @@ public class UltraNewIntegration {
                 intMode = UltraNewIntegration::rectangular;
                 break;
             case TRAPEZOIDAL:
-            case BOOLE: // Temporary assignment
             default:
                 intMode = UltraNewIntegration::trapezoidal;
                 break;
@@ -435,16 +466,7 @@ public class UltraNewIntegration {
                 break;
             case 3:
                 // Alternately implement Simpson's 3/8 4-point rule.
-                area += simpsons(data, side, lb, ub);
-                switch(side) {
-                    case LEFT:
-                        lb += 2;
-                        break;
-                    case RIGHT:
-                        ub -= 2;
-                        break;
-                }
-                area += trapezoidal(data, side, lb, ub);
+                area += simpsons(data, side, lb, ub); // Will recursively call finishIntegration, thus getting another round of trapezoidal.
                 break;
             case 4:
             default:
@@ -493,6 +515,53 @@ public class UltraNewIntegration {
         }
 
         return normalSimpsons;
+    }
+    
+    public static double booles(DataSet data, IntegrationSide side) {
+        double area = 0;
+        int lb = 0;
+        int ub = data.numPoints() - 1;
+        if (data.halfWidthEnds()) {
+            area = trapezoidalEnds(data, side);
+            lb++;
+            ub--;
+        }
+        area += booles(data, side, lb, ub);
+        return area;
+    }
+
+    public static double booles(DataSet data, IntegrationSide side, int lb, int ub) {
+        double area = 0;
+        double width = data.binWidth();
+        double[] points = data.getAllPoints();
+        int increment = 4;
+        
+        int nBins = (ub - lb) / increment;
+        int lowerNeglected;
+        int upperNeglected;
+        
+        switch (side) {
+            case RIGHT:
+                for (int i = ub; i > (lb + increment - 1); i -= increment) {
+                    area += (7 * points[i] + 32*points[i-1] + 12*points[i-2] + 32*points[i-3] + 7*points[i-4]);
+                }
+                lowerNeglected = lb;
+                upperNeglected = ub - (increment*nBins);
+                break;
+            case LEFT:
+            default:
+                for (int i = lb; i < (ub - increment + 1); i+= increment) {
+                    area += (7*points[i] + 32*points[i+1] + 12*points[i+2] + 32*points[i+3] + 7*points[i+4]);
+                }
+                lowerNeglected = lb + (increment*nBins);
+                upperNeglected = ub;
+                break;
+        }
+        area *= BOOLE_FACTOR;
+        area *= width;
+        
+        area += finishIntegration(data, side, lowerNeglected, upperNeglected, IntegrationType.BOOLE);
+        return area;
     }
 
     public static double booleLeft(double[] inputData, double width) {
