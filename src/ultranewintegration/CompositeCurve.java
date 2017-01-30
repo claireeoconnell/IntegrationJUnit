@@ -36,6 +36,7 @@ public class CompositeCurve extends FunctionDataCurve {
         lb = curve0.lowerBound();
         ub = curve0.upperBound();
         halfWidthEnd = curve0.halfWidthEnds();
+        x = curve0.getX();
         double sep = curve0.binWidth();
         
         boolean isInvalid = Arrays.stream(curves).anyMatch((FunctionDataCurve c) -> {

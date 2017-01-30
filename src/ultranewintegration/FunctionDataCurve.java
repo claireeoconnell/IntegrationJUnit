@@ -15,6 +15,7 @@ public abstract class FunctionDataCurve implements DataSet {
     protected double ub;
     protected double[] points;
     protected boolean halfWidthEnd;
+    protected double[] x;
     
     @Override
     public double lowerBound() {
@@ -133,6 +134,13 @@ public abstract class FunctionDataCurve implements DataSet {
         // Ulp the larger of the two values.
         double ulp = Math.ulp(Math.max(Math.abs(x1), Math.abs(x2)));
         return (diff < (ulp * ulpMult));
+    }
+    
+    @Override
+    public double[] getX() {
+        double[] copyX = new double[x.length];
+        System.arraycopy(x, 0, copyX, 0, x.length);
+        return copyX;
     }
     
     @Override

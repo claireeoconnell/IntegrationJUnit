@@ -149,12 +149,12 @@ public class UltraNewJUnit {
          * These are the coefficients for polynomials of order 0 to 5, in reverse
          * order; thus the second-order polynomial is x^2 - 4x + 1.5.
          */
-        double[] zeroOrder = {1.0};
-        double[] firstOrder = {2.0, 1.0};
-        double[] secondOrder = {1.5, -4.0, 1.0};
-        double[] thirdOrder = {2.0, -1.0, -3.0, 1.0};
-        double[] fourthOrder = {1, -4.0, -6.0, 4.0, 1.0};
-        double[] fifthOrder = {2.0, 10.0, -18.0, 8.0, -5.0, 1.0};
+        double[] zeroOrder = {1.0}; // f(x) = 1
+        double[] firstOrder = {2.0, 1.0}; // f(x) = x+2
+        double[] secondOrder = {1.5, -4.0, 1.0}; // f(x) = x^2 - 4x + 1.5
+        double[] thirdOrder = {2.0, -1.0, -3.0, 1.0}; // f(x) = x^3 - 3x^2 - x + 2
+        double[] fourthOrder = {1, -4.0, -6.0, 4.0, 1.0}; // f(x) = x^4 + 4x^3 - 6x^2 - 4x + 1
+        double[] fifthOrder = {2.0, 10.0, -18.0, 8.0, -5.0, 1.0}; // f(x) = x^5 - 5x^4 + 8x^3 - 18x^2 + 10x + 2
         
         /**
          * Hand-calculated integrals from 0-1, to test that the analyticalIntegral
@@ -262,7 +262,7 @@ public class UltraNewJUnit {
     @Test
     public void polynomialGrinderTest () {
         System.out.println("Testing integration methods on polynomials with large coefficients.");
-        double[] points = UltraNewIntegration.generateXPoints(0.0, 1.0, 5, false);
+        double[] points = UltraNewIntegration.generateXPoints(0.0, 2.0, 5, false);
         
         double[] zeroOrder = {-2.0};
         double[] firstOrder = {6.0, -14.0};

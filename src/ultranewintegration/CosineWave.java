@@ -33,6 +33,8 @@ public class CosineWave extends FunctionDataCurve{
         lb = x[0];
         ub = x[npoints-1];
         assertXIntegrity(x);
+        this.x = new double[x.length];
+        System.arraycopy(x, 0, this.x, 0, x.length);
     }
     
     @Override

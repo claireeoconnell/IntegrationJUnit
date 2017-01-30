@@ -32,16 +32,21 @@ public interface DataSet {
      */
     public abstract double binWidth();
     /**
-     * Point at index.
+     * Point f(x) at index.
      * @param index
      * @return 
      */
     public abstract double getPoint(int index);
     /**
-     * Returns copy of the array of points to integrate.
+     * Returns copy of the array of points f(x) to integrate (y-axis).
      * @return 
      */
     public abstract double[] getAllPoints();
+    /**
+     * Returns copy of the array of points x (x-axis).
+     * @return 
+     */
+    public abstract double[] getX();
     /**
      * Does this data set have half-width start/end bins. Intended for OSRW,
      * where the first and last bins are half the regular width.

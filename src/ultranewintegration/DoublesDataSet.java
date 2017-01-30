@@ -112,4 +112,10 @@ public class DoublesDataSet implements DataSet {
         }
     }
     
+    @Override
+    public double[] getX() {
+        double[] copyX = new double[x.length];
+        System.arraycopy(x, 0, copyX, 0, x.length);
+        return copyX;
+    }
 }
