@@ -38,6 +38,8 @@
 package ultranewintegration;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This program integrates using three methods: the trapezoidal method,
@@ -49,6 +51,7 @@ public class UltraNewIntegration {
 
     private final static double[] x = new double[201];
     private static final double DEFAULT_WIDTH = 0.005;
+    private static final double ONE_THIRD = (1.0 / 3.0);
 
     static {
         /*x[0] = 0;
@@ -68,10 +71,12 @@ public class UltraNewIntegration {
         double testBoole, testBooleRight, avgBoole, avgBooleError;
         double testRect, testRectRight, avgRect, avgRectError;
         DecimalFormat decimalFormat = new DecimalFormat("#.00");
+        FunctionDataCurve testData = generateStandardData();
 
         testAnswer = 2.98393938659796;
         System.out.print("The test case answer is " + testAnswer + "\n\n");
 
+        /*
         testRect = rectangularMethodLeft(generateTestData_v1());
         //System.out.print("Testing rectangular left " + testRect + "\n");
         testRectRight = rectangularMethodRight(generateTestData_v1());
@@ -107,7 +112,7 @@ public class UltraNewIntegration {
         //System.out.print("Average Boole " + avgBoole + "\n");
         avgBooleError = Math.abs(testAnswer - avgBoole) / testAnswer * 100;
         //System.out.print("Average Boole error " + decimalFormat.format(avgBooleError) + "%\n");
-
+        
         //Average integrals
         System.out.print("Average integrals \n\n");
         System.out.print("Average rectangular " + avgRect + "\n");
@@ -121,6 +126,47 @@ public class UltraNewIntegration {
         System.out.print("Avg Trapezoidal error  " + decimalFormat.format(avgTrapError) + "%\n");
         System.out.print("Average Simpsons error " + decimalFormat.format(avgSimpError) + "%\n");
         System.out.print("Average Boole error " + decimalFormat.format(avgBooleError) + "%\n");
+        */
+    }
+    
+    private static FunctionDataCurve generateStandardData() {
+        // Replace as desired with other standardized data generators.
+        return generateStandardDataV2();
+    }
+    
+    private static FunctionDataCurve generateStandardDataV2() {
+        double[] x = new double[201];
+        for (int i = 0; i < x.length; i++) {
+            x[i] = i * DEFAULT_WIDTH;
+        }
+        List<Double> coeffs = null;
+        List<FunctionDataCurve> curves = new ArrayList<>();
+        
+        FunctionDataCurve newCurve = new SinWave(x, 10, 6);
+        curves.add(newCurve);
+        
+        newCurve = new CosineWave(x, 7, 5);
+        curves.add(newCurve);
+        
+        newCurve = new SinWave(x, 11, 8);
+        curves.add(newCurve);
+        
+        // Alternate method: set leading coefficients for the CompositeCurve constructor.
+        /*
+        coeffs = new ArrayList<>();
+        DataCurve newCurve = new SinWave(x, 1, 6);
+        coeffs.add(10.0);
+        curves.add(newCurve);
+        
+        newCurve = new CosineWave(x, 1, 5);
+        coeffs.add(7.0);
+        curves.add(newCurve);
+        
+        newCurve = new SinWave(x, 1, 8);
+        coeffs.add(11.0);
+        curves.add(newCurve);*/
+        
+        return new CompositeCurve(curves, coeffs);
     }
 
     public static double averageIntegral(double leftInt, double rightInt) {
@@ -193,6 +239,42 @@ public class UltraNewIntegration {
         //System.out.print("Half bin composite " + halfBinComposite + "\n");
         return halfBinComposite;
     }
+    
+    public static double trapezoidal(DataSet data, IntegrationSide side) {
+        double area = 0;
+        int lb = 0;
+        int ub = data.numPoints() - 1;
+        if (data.halfWidthEnds()) {
+            area = trapezoidalEnds(data, side);
+            lb++;
+            ub--;
+        }
+        area += trapezoidal(data, side, lb, ub);
+        return area;
+    }
+    
+    public static double trapezoidal(DataSet data, IntegrationSide side, int lb, int ub) {
+        double area = 0;
+        int nPoints = data.numPoints();
+        double width = data.binWidth();
+        double[] points = data.getAllPoints();
+        
+        area = 0.5 * points[lb];
+        area += 0.5 * points[ub];
+        for (int i = lb + 1; i < ub; i++) {
+            area += points[i];
+        }
+        area *= width;
+        return area;
+    }
+    
+    public static double trapezoidalEnds(DataSet data, IntegrationSide side) {
+        double width = 0.5 * data.binWidth();
+        int nPts = data.numPoints();
+        double area = data.getPoint(0) + data.getPoint(1) + data.getPoint(nPts-2) + data.getPoint(nPts - 1);
+        area *= (0.5 * width);
+        return area;
+    }
 
     public static double trapInputLeft(double[] inputData, double width) {
         double trapIntegral = 0, sum, area, total;
@@ -249,7 +331,130 @@ public class UltraNewIntegration {
 
         return trapIntegral;
     }
+    
+    public static double simpsons(DataSet data, IntegrationSide side) {
+        double area = 0;
+        int lb = 0;
+        int ub = data.numPoints() - 1;
+        if (data.halfWidthEnds()) {
+            area = trapezoidalEnds(data, side);
+            lb++;
+            ub--;
+        }
+        area += simpsons(data, side, lb, ub);
+        return area;
+    }
 
+    public static double simpsons(DataSet data, IntegrationSide side, int lb, int ub) {
+        double area = 0;
+        int nPoints = data.numPoints();
+        double width = data.binWidth();
+        double[] points = data.getAllPoints();
+        
+        int nBins = (ub - lb) / 2;
+        int lowerNeglected;
+        int upperNeglected;
+        
+        switch (side) {
+            case RIGHT:
+                for (int i = ub; i > (lb + 1); i -= 2) {
+                    area += points[i] + (4*points[i-1]) + points[i-2];
+                }
+                lowerNeglected = lb;
+                upperNeglected = ub - (2*nBins);
+                break;
+            case LEFT:
+            default:
+                for (int i = lb; i < (ub-1); i+= 2) {
+                    area += points[i] + (4*points[i+1]) + points[i+2];
+                }
+                lowerNeglected = lb + (2*nBins);
+                upperNeglected = ub;
+                break;
+        }
+        area *= ONE_THIRD;
+        area *= width;
+        
+        area += finishIntegration(data, side, lowerNeglected, upperNeglected, IntegrationType.SIMPSONS);
+        return area;
+    }
+    
+    private static double finishIntegration(DataSet data, IntegrationSide side, int lb, int ub, IntegrationType type) {
+        double width = data.binWidth();
+        int totPoints = (ub - lb);
+        
+        int perBin = type.binsNeeded();
+        int increment = perBin - 1;
+        increment = Math.max(1, increment); // Needed for rectangular integration
+        
+        int nBins = totPoints / increment;
+        int remainder = totPoints % increment;
+        
+        IntegrateWindow intMode;
+        switch (type) {
+            case SIMPSONS:
+                intMode = UltraNewIntegration::simpsons;
+                break;
+            case RECTANGULAR:
+                intMode = UltraNewIntegration::rectangular;
+                break;
+            case TRAPEZOIDAL:
+            case BOOLE: // Temporary assignment
+            default:
+                intMode = UltraNewIntegration::trapezoidal;
+                break;
+        }
+        
+        double area = 0.0;
+        
+        switch (side) {
+            case RIGHT:
+                for (int i = ub; i > (lb - 1 + increment); i -= increment) {
+                    area += intMode.toArea(data, side, (i-increment), i);
+                }
+                ub -= (nBins * increment);
+                break;
+            case LEFT:
+            default:
+                for (int i = lb; i < (ub + 1 - increment); i+= increment) {
+                    area += intMode.toArea(data, side, i, (i + increment));
+                }
+                lb += (nBins * increment);
+                break;
+        }
+        
+        assert remainder == (ub - lb);
+        switch(remainder) {
+            case 0:
+                break;
+            case 1:
+                area += trapezoidal(data, side, lb, ub);
+                break;
+            case 2:
+                area += simpsons(data, side, lb, ub);
+                break;
+            case 3:
+                // Alternately implement Simpson's 3/8 4-point rule.
+                area += simpsons(data, side, lb, ub);
+                switch(side) {
+                    case LEFT:
+                        lb += 2;
+                        break;
+                    case RIGHT:
+                        ub -= 2;
+                        break;
+                }
+                area += trapezoidal(data, side, lb, ub);
+                break;
+            case 4:
+            default:
+                throw new IllegalArgumentException("This should not be currently possible.");
+                /*System.err.println(String.format("Total points: %d perBin %d increment %d type %s nBins %d remainder %d", totPoints, perBin, increment, type.toString(), nBins, remainder));
+                break;*/
+        }
+        return area;
+    }
+    
     public static double simpsonsLeft(double[] inputData, double width) {
         double normalSimpsons = 0, area, sum, total;
         int n;
@@ -339,7 +544,7 @@ public class UltraNewIntegration {
         double[] subset = new double[remainingBins];
         System.arraycopy(inputData, pos, subset, 0, remainingBins);
         
-        int levelwidth = maxLevel.binsConsumed();
+        int levelwidth = maxLevel.binsNeeded();
         int fullBins = remainingBins / levelwidth;
         
         double area = 0;
@@ -367,6 +572,7 @@ public class UltraNewIntegration {
             case 1:
                 break;
         }
+        return 0;
     }
     
     @Deprecated
@@ -394,6 +600,59 @@ public class UltraNewIntegration {
         double area = 0.0;
         for (int a = 0; a < n-1; a++) {
             area += (inputData[a] * width);
+        }
+        return area;
+    }
+    
+    public static double rectangular(DataSet data, IntegrationSide side) {
+        double area = 0;
+        int lb = 0;
+        int ub = data.numPoints() - 1;
+        if (data.halfWidthEnds()) {
+            area = rectangularEnds(data, side);
+            ++lb;
+            --ub;
+        }
+        area += rectangular(data, side, lb, ub);
+        return area;
+    }
+    
+    public static double rectangular(DataSet data, IntegrationSide side, int lb, int ub) {
+        double area = 0;
+        double width = data.binWidth();
+        double[] points = data.getAllPoints();
+        assert ub > lb;
+        assert ub < points.length;
+        
+        switch (side) {
+            case RIGHT:
+                for (int i = ub; i > lb; i--) {
+                    area += (width * points[i]);
+                }
+                break;
+            case LEFT:
+            default:
+                for (int i = lb; i < ub; i++) {
+                    area += width * points[i];
+                }
+                break;
+        }
+        return area;
+    }
+    
+    public static double rectangularEnds(DataSet data, IntegrationSide side) {
+        double width = 0.5 * data.binWidth();
+        double area = 0;
+        int npts = data.numPoints();
+        switch (side) {
+            case LEFT:
+                area = data.getPoint(0) * width;
+                area += (data.getPoint(npts - 2) * width);
+                break;
+            case RIGHT:
+                area = data.getPoint(1) * width;
+                area += (data.getPoint(npts - 1) * width);
+                break;
         }
         return area;
     }
@@ -438,15 +697,20 @@ public class UltraNewIntegration {
         RECTANGULAR(1),
         TRAPEZOIDAL(2),
         SIMPSONS(3),
-        BOOLE(4);
+        BOOLE(5);
         
         private final int requiredBins;
         IntegrationType(int bins) {
             requiredBins = bins;
         }
         
-        public final int binsConsumed() {
+        public final int binsNeeded() {
             return requiredBins;
         }
+    }
+    
+    @FunctionalInterface
+    private static interface IntegrateWindow {
+        public abstract double toArea(DataSet data, IntegrationSide side, int lb, int ub);
     }
 }

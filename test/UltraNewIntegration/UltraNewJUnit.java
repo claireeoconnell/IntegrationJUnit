@@ -5,9 +5,13 @@
  */
 package UltraNewIntegration;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
+
 import static ultranewintegration.UltraNewIntegration.HalfBinComposite;
 import static ultranewintegration.UltraNewIntegration.generateTestData_v1;
 import static ultranewintegration.UltraNewIntegration.trapInputLeft;
@@ -20,6 +24,14 @@ import static ultranewintegration.UltraNewIntegration.booleRight;
 import ultranewintegration.UltraNewIntegration.IntegrationSide;
 import ultranewintegration.UltraNewIntegration.IntegrationType;
 import static ultranewintegration.UltraNewIntegration.rectangularMethodRight;
+
+import static ultranewintegration.UltraNewIntegration.IntegrationSide.*;
+import ultranewintegration.UltraNewIntegration;
+import ultranewintegration.FunctionDataCurve;
+import ultranewintegration.PolynomialCurve;
+import ultranewintegration.SinWave;
+import ultranewintegration.CosineWave;
+import ultranewintegration.CompositeCurve;
 
 /**
  * The IntegrationTest is a JUnit test for the Integration program that ensures
@@ -90,7 +102,7 @@ public class UltraNewJUnit {
 
     public static double[] generateTestData(int j) {
 
-        double y[] = new double[202];
+        double y[] = new double[201];
 
         for (int i = 0; i < 202; i++) {
             y[i] = j * Math.sin(j * x[i]);
@@ -100,9 +112,9 @@ public class UltraNewJUnit {
     }
 
     public static double[] generateReverseData(double[] data) {
-        double reverseData[] = new double[202];
+        double reverseData[] = new double[201];
 
-        for (int i = 0; i < 202; i++) {
+        for (int i = 0; i < 201; i++) {
             reverseData[201 - i] = data[i];
         }
 
@@ -113,6 +125,74 @@ public class UltraNewJUnit {
         double val = 0;
         val = -Math.cos(j) + 1;
         return val;
+    }
+    
+    @Test
+    public void polynomialTest() {
+        double[] points = new double[41]; // Intentionally smaller than ordinary x.
+        double length = (1.0 / ((double) points.length - 1));
+        for (int i = 0; i < points.length; i++) {
+            points[i] = i * length;
+        }
+        
+        double[] zeroOrder = {1.0};
+        double[] firstOrder = {2.0, 1.0};
+        double[] secondOrder = {1.5, -4.0, 1.0};
+        double[] thirdOrder = {2.0, -1.0, -3.0, 1.0};
+        double[] fourthOrder = {1, -4.0, -6.0, 4.0, 1.0};
+        double[] fifthOrder = {2.0, 10.0, -18.0, 8.0, -5.0, 1.0};
+        double[] trueVals = {1.0, 2.5, (-1.0 / 6.0), 0.75, -1.8, (13.0/6.0)};
+        
+        double[][] coeffs = {zeroOrder, firstOrder, secondOrder, thirdOrder, fourthOrder, fifthOrder};
+        List<FunctionDataCurve> polynomials = Arrays.stream(coeffs).map((double[] coeff) -> {
+            return new PolynomialCurve(points, false, coeff);
+        }).collect(Collectors.toList());
+        
+        for (int i = 0; i < polynomials.size(); i++) {
+            FunctionDataCurve pn = polynomials.get(i);
+            
+            double trueVal = trueVals[i];
+            double analytical = pn.analyticalIntegral();
+            
+            double rLeft = UltraNewIntegration.rectangular(pn, LEFT);
+            double rRight = UltraNewIntegration.rectangular(pn, RIGHT);
+            
+            double tLeft = UltraNewIntegration.trapezoidal(pn, LEFT);
+            double tRight = UltraNewIntegration.trapezoidal(pn, RIGHT);
+            
+            double sLeft = UltraNewIntegration.simpsons(pn, LEFT);
+            double sRight = UltraNewIntegration.simpsons(pn, RIGHT);
+            
+            System.out.println(String.format(" Integrals for polynomial of degree %d", i));
+            System.out.println(String.format(" %-18s %9.3g  %-18s %9.3g", "Exact", trueVal, "Analytical", analytical));
+            System.out.println(" Numerical integration errors:");
+            System.out.println(String.format(" %-18s %9.3g  %-18s %9.3g", "Left rectangular", rLeft - trueVal, "Right rectangular", rRight - trueVal));
+            System.out.println(String.format(" %-18s %9.3g  %-18s %9.3g", "Left trapezoidal", tLeft - trueVal, "Right trapezoidal", tRight - trueVal));
+            System.out.println(String.format(" %-18s %9.3g  %-18s %9.3g", "Left Simpson's", sLeft - trueVal, "Right Simpson's", sRight - trueVal));
+            
+            if (i == 0) {
+                assertToUlp(trueVal, 500.0, rLeft, rRight);
+            }
+            if (i <= 1) {
+                assertToUlp(trueVal, 500.0, tLeft, tRight);
+            }
+            // Insert code to assert for Simpson's and Boole's.
+            // Simpson's should be exact up to order 2, Boole's exact up to order 4.
+            System.out.println();
+        }
+    }
+    
+    /**
+     * Assert that doubles are equal to within a multiplier of ulp (machine precision).
+     * @param trueVal
+     * @param ulpMult
+     * @param values 
+     */
+    private static void assertToUlp(double trueVal, double ulpMult, double... values) {
+        double ulp = Math.ulp(trueVal) * ulpMult;
+        for (double val : values) {
+            assertEquals(trueVal, val, ulp);
+        }
     }
 
     /**
@@ -144,10 +224,10 @@ public class UltraNewJUnit {
         // Assert that the known integrals and calculated integrals are the same.
         //for (int i=0;i<500;i++){
         for (int i = 1; i < 500; i++) {
-            double trueVal = analyticIntegral(i);
-            double[] testData = generateTestData(i);
+            //double trueVal = analyticIntegral(i);
+            //double[] testData = generateTestData(i);
 
-            calculatedIntegral[0] = trapInputLeft(testData);
+            /*calculatedIntegral[0] = trapInputLeft(testData);
             calculatedIntegral[1] = simpsonsLeft(testData) + HalfBinComposite(testData, IntegrationType.SIMPSONS, IntegrationSide.LEFT);
             calculatedIntegral[2] = booleLeft(testData) + HalfBinComposite(testData, IntegrationType.BOOLE, IntegrationSide.LEFT);
             //calculatedIntegral[3] = rectangularMethodLeft(testData);
@@ -156,7 +236,8 @@ public class UltraNewJUnit {
             calculatedIntegral[4] = simpsonsRight(testData) + HalfBinComposite(testData, IntegrationType.SIMPSONS, IntegrationSide.RIGHT);
             calculatedIntegral[5] = booleRight(testData) + HalfBinComposite(testData, IntegrationType.BOOLE, IntegrationSide.RIGHT);
             //calculatedIntegral[7] = rectangularMethodRight(testData);
-
+            */
+            
             // Flip the data, input to alternate methods.
             /*calculatedIntegral[0] = trapInputRight(testData);
             calculatedIntegral[1] = simpsonsRight(testData)+HalfBinComposite(testData, IntegrationType.SIMPSONS,IntegrationSide.RIGHT);
@@ -165,6 +246,7 @@ public class UltraNewJUnit {
             calculatedIntegral[4] = simpsonsLeft(testData)+HalfBinComposite(testData, IntegrationType.SIMPSONS, IntegrationSide.LEFT);
             calculatedIntegral[5] = booleLeft(testData)+HalfBinComposite(testData, IntegrationType.BOOLE, IntegrationSide.LEFT);*/
             
+            /*
             System.out.print("\nSim number " + i + "\n\n");
             //assertEquals(knownIntegral[i],calculatedIntegral[i], DELTA);
             System.out.println("Analytic integral: " + trueVal);
@@ -203,6 +285,8 @@ public class UltraNewJUnit {
         }
         for (int i = 0; i < 6; i++) {
             System.out.println(" L/R Trap/Simp/Bool failiter: " + failIter[i]);
+        }
+        */
         }
     }
 }
