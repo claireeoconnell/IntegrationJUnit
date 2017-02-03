@@ -71,12 +71,12 @@ public abstract class FunctionDataCurve implements DataSet {
     public abstract double fX(double x);
     
     @Override
-    public double getPoint(int index) {
+    public double getFxPoint(int index) {
         return points[index];
     }
     
     @Override
-    public double[] getAllPoints() {
+    public double[] getAllFxPoints() {
         int npoints = points.length;
         double[] retArray = new double[npoints];
         System.arraycopy(points, 0, retArray, 0, npoints);

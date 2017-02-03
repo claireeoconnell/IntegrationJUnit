@@ -36,12 +36,12 @@ public interface DataSet {
      * @param index
      * @return 
      */
-    public abstract double getPoint(int index);
+    public abstract double getFxPoint(int index);
     /**
      * Returns copy of the array of points f(x) to integrate (y-axis).
      * @return 
      */
-    public abstract double[] getAllPoints();
+    public abstract double[] getAllFxPoints();
     /**
      * Returns copy of the array of points x (x-axis).
      * @return 

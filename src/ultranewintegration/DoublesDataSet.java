@@ -52,7 +52,7 @@ public class DoublesDataSet implements DataSet {
         System.arraycopy(set.getX(), 0, this.x, 0, nX);
         
         this.fX = new double[nX];
-        System.arraycopy(set.getAllPoints(), 0, this.fX, 0, nX);
+        System.arraycopy(set.getAllFxPoints(), 0, this.fX, 0, nX);
         
         lb = x[0];
         ub = x[nX-1];
@@ -83,12 +83,12 @@ public class DoublesDataSet implements DataSet {
     }
 
     @Override
-    public double getPoint(int index) {
+    public double getFxPoint(int index) {
         return fX[index];
     }
 
     @Override
-    public double[] getAllPoints() {
+    public double[] getAllFxPoints() {
         double[] pts = new double[nX];
         System.arraycopy(fX, 0, pts, 0, nX);
         return pts;

@@ -288,7 +288,7 @@ public class UltraNewIntegration {
     public static double trapezoidal(DataSet data, IntegrationSide side, int lb, int ub) {
         int nPoints = data.numPoints();
         double width = data.binWidth();
-        double[] points = data.getAllPoints();
+        double[] points = data.getAllFxPoints();
         
         double area = 0.5 * points[lb];
         area += 0.5 * points[ub];
@@ -302,7 +302,7 @@ public class UltraNewIntegration {
     public static double trapezoidalEnds(DataSet data, IntegrationSide side) {
         double width = 0.5 * data.binWidth();
         int nPts = data.numPoints();
-        double area = data.getPoint(0) + data.getPoint(1) + data.getPoint(nPts-2) + data.getPoint(nPts - 1);
+        double area = data.getFxPoint(0) + data.getFxPoint(1) + data.getFxPoint(nPts-2) + data.getFxPoint(nPts - 1);
         area *= (0.5 * width);
         return area;
     }
@@ -381,7 +381,7 @@ public class UltraNewIntegration {
     public static double simpsons(DataSet data, IntegrationSide side, int lb, int ub) {
         double area = 0;
         double width = data.binWidth();
-        double[] points = data.getAllPoints();
+        double[] points = data.getAllFxPoints();
         int increment = 2;
         
         int nBins = (ub - lb) / increment;
@@ -554,7 +554,7 @@ public class UltraNewIntegration {
     public static double booles(DataSet data, IntegrationSide side, int lb, int ub) {
         double area = 0;
         double width = data.binWidth();
-        double[] points = data.getAllPoints();
+        double[] points = data.getAllFxPoints();
         int increment = 4;
         
         int nBins = (ub - lb) / increment;
@@ -676,7 +676,7 @@ public class UltraNewIntegration {
     public static double rectangular(DataSet data, IntegrationSide side, int lb, int ub) {
         double area = 0;
         double width = data.binWidth();
-        double[] points = data.getAllPoints();
+        double[] points = data.getAllFxPoints();
         assert ub > lb;
         assert ub < points.length;
         
@@ -702,12 +702,12 @@ public class UltraNewIntegration {
         int npts = data.numPoints();
         switch (side) {
             case LEFT:
-                area = data.getPoint(0) * width;
-                area += (data.getPoint(npts - 2) * width);
+                area = data.getFxPoint(0) * width;
+                area += (data.getFxPoint(npts - 2) * width);
                 break;
             case RIGHT:
-                area = data.getPoint(1) * width;
-                area += (data.getPoint(npts - 1) * width);
+                area = data.getFxPoint(1) * width;
+                area += (data.getFxPoint(npts - 1) * width);
                 break;
         }
         return area;

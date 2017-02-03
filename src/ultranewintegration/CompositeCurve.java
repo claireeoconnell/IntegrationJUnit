@@ -60,7 +60,7 @@ public class CompositeCurve extends FunctionDataCurve {
         for (int i = 0; i < nPoints; i++) {
             points[i] = 0.0;
             for (int j = 0; j < nCurves; j++) {
-                points[i] += (coeffs[j] * curves[j].getPoint(i));
+                points[i] += (coeffs[j] * curves[j].getFxPoint(i));
             }
         }
     }
