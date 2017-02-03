@@ -61,4 +61,22 @@ public class PolynomialCurve extends FunctionDataCurve {
         }
         return total;
     }
+    
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("Polynomial curve of degree ");
+        sb.append(coeff.length).append(String.format(" with %d points from lower bound %9.3g and upper bound %9.3g", points.length, lb, ub));
+        if (halfWidthEnd) {
+            sb.append(" and half-width start/end bins");
+        }
+        sb.append(".\nCoefficients: ");
+        if (coeff.length > 0) {
+            sb.append(coeff[0]);
+        }
+        for (int i = 1; i < coeff.length; i++) {
+            sb.append(",").append(coeff[i]);
+        }
+        
+        return sb.toString();
+    }
 }

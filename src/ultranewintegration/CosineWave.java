@@ -46,4 +46,16 @@ public class CosineWave extends FunctionDataCurve{
     public double fX(double x) {
         return a*Math.cos(j*x);
     }
+    
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("Cosine wave f(x) = ");
+        sb.append(a).append("*cos(").append(j).append("x)");
+        sb.append(String.format(" with %d points from lower bound %9.3g and upper bound %9.3g", points.length, lb, ub));
+        if (halfWidthEnd) {
+            sb.append(" and half-width start/end bins");
+        }
+        
+        return sb.toString();
+    }
 }

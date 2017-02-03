@@ -6,9 +6,6 @@
 package ultranewintegration;
 
 import static ultranewintegration.FunctionDataCurve.approxEquals;
-import static ultranewintegration.FunctionDataCurve.approxEquals;
-import static ultranewintegration.FunctionDataCurve.approxEquals;
-import static ultranewintegration.FunctionDataCurve.approxEquals;
 
 /**
  * Descibes a set of x, f(x) obtained by some mechanism; intended for numerical
@@ -45,6 +42,23 @@ public class DoublesDataSet implements DataSet {
         halfWidthEnd = halvedEnds;
         double sepDist = ub - lb;
         sep = halfWidthEnd ? (sepDist / ((double) nX-2)) : (sepDist / ((double) nX-1));
+        assertXIntegrity(x);
+    }
+    
+    public DoublesDataSet(DataSet set) {
+        nX = set.numPoints();
+        
+        this.x = new double[nX];
+        System.arraycopy(set.getX(), 0, this.x, 0, nX);
+        
+        this.fX = new double[nX];
+        System.arraycopy(set.getAllPoints(), 0, this.fX, 0, nX);
+        
+        lb = x[0];
+        ub = x[nX-1];
+        this.halfWidthEnd = set.halfWidthEnds();
+        sep = set.binWidth();
+        // Possibly add assertion for separation distance
         assertXIntegrity(x);
     }
 
@@ -117,5 +131,15 @@ public class DoublesDataSet implements DataSet {
         double[] copyX = new double[x.length];
         System.arraycopy(x, 0, copyX, 0, x.length);
         return copyX;
+    }
+    
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder(String.format("Data set with %d points from lower bound %9.3g and upper bound %9.3g", nX, lb, ub));
+        if (halfWidthEnd) {
+            sb.append(" and half-width start/end bins");
+        }
+        sb.append(".");
+        return sb.toString();
     }
 }

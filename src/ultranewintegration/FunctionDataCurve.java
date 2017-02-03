@@ -147,4 +147,14 @@ public abstract class FunctionDataCurve implements DataSet {
     public boolean halfWidthEnds() {
         return halfWidthEnd;
     }
+    
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder(String.format("Function f(x) curve with %d points from lower bound %9.3g and upper bound %9.3g", points.length, lb, ub));
+        if (halfWidthEnd) {
+            sb.append(" and half-width start/end bins");
+        }
+        sb.append(".");
+        return sb.toString();
+    }
 }

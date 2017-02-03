@@ -86,4 +86,16 @@ public class CompositeCurve extends FunctionDataCurve {
     public List<FunctionDataCurve> getSubCurves() {
         return Arrays.asList(curves);
     }
+    
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder(String.format("Composite curve with %d points from lower bound %9.3g and upper bound %9.3g", points.length, lb, ub));
+        if (halfWidthEnd) {
+            sb.append(" and half-width start/end bins.\nComponent curves:\n");
+        }
+        for (FunctionDataCurve curve : curves) {
+            sb.append(curve.toString());
+        }
+        return sb.toString();
+    }
 }

@@ -7,32 +7,25 @@ package UltraNewIntegration;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import static ultranewintegration.UltraNewIntegration.HalfBinComposite;
-import static ultranewintegration.UltraNewIntegration.generateTestData_v1;
-import static ultranewintegration.UltraNewIntegration.trapInputLeft;
-import static ultranewintegration.UltraNewIntegration.simpsonsLeft;
-import static ultranewintegration.UltraNewIntegration.booleLeft;
-import static ultranewintegration.UltraNewIntegration.rectangularMethodLeft;
-import static ultranewintegration.UltraNewIntegration.trapInputRight;
-import static ultranewintegration.UltraNewIntegration.simpsonsRight;
-import static ultranewintegration.UltraNewIntegration.booleRight;
-import ultranewintegration.UltraNewIntegration.IntegrationSide;
-import ultranewintegration.UltraNewIntegration.IntegrationType;
-import static ultranewintegration.UltraNewIntegration.rectangularMethodRight;
-
-import static ultranewintegration.UltraNewIntegration.IntegrationSide.*;
-import ultranewintegration.UltraNewIntegration;
+import ultranewintegration.DataSet;
+import ultranewintegration.DoublesDataSet;
 import ultranewintegration.FunctionDataCurve;
 import ultranewintegration.PolynomialCurve;
 import ultranewintegration.SinWave;
 import ultranewintegration.CosineWave;
-import ultranewintegration.CompositeCurve;
+
+import ultranewintegration.UltraNewIntegration;
+import ultranewintegration.UltraNewIntegration.IntegrationSide;
+import ultranewintegration.UltraNewIntegration.IntegrationType;
+
+import static ultranewintegration.UltraNewIntegration.IntegrationSide.*;
 
 /**
  * The IntegrationTest is a JUnit test for the Integration program that ensures
@@ -47,7 +40,8 @@ public class UltraNewJUnit {
      * Create array with pointers to doubles that will contain known integrals.
      */
     private double[] knownIntegral;
-
+    
+    private final static int NUM_INTEGRATION_TYPES = 8; // Left/right, rect/trap/simp/boole.
     private final static double[] x = new double[201];
 
     static {
@@ -421,6 +415,122 @@ public class UltraNewJUnit {
         System.out.println(String.format(" %-18s %9d  %-18s %9d", "Left trapezoidal", failTleft, "Right trapezoidal", failTright));
         System.out.println(String.format(" %-18s %9d  %-18s %9d", "Left Simpson's", failSleft, "Right Simpson's", failSright));
         System.out.println(String.format(" %-18s %9d  %-18s %9d", "Left Boole's", failBleft, "Right Boole's", failBright));
+        
+        StringBuilder sb = new StringBuilder(" integration failed for ");
+        if (halvedEnds) {
+            if (cosine) {
+                sb.append("cosine wave, with half-width end bins, of frequency ");
+            } else {
+                sb.append("sine wave, with half-width end bins, of frequency ");
+            }
+            String midMessage = sb.toString();
+            assertTrue(String.format("Rectangular%s%d", midMessage, 12), failRleft > 12 && failRright > 12);
+            assertTrue(String.format("Trapezoidal%s%d", midMessage, 100), failTleft > 100 && failTright > 100);
+            assertTrue(String.format("Simpson's%s%d", midMessage, 150), failSleft > 150 && failSright > 150);
+            assertTrue(String.format("Boole's%s%d", midMessage, 150), failBleft > 150 && failBright > 150);
+            
+        } else {
+            if (cosine) {
+                sb.append("cosine wave of frequency ");
+            } else {
+                sb.append("sine wave of frequency ");
+            }
+            String midMessage = sb.toString();
+            assertTrue(String.format("Rectangular%s%d", midMessage, 12), failRleft > 12 && failRright > 12);
+            assertTrue(String.format("Trapezoidal%s%d", midMessage, 100), failTleft > 100 && failTright > 100);
+            assertTrue(String.format("Simpson's%s%d", midMessage, 250), failSleft > 250 && failSright > 250);
+            assertTrue(String.format("Boole's%s%d", midMessage, 240), failBleft > 240 && failBright > 240);
+        }
+    }
+    
+    @Test
+    public void castToDoubleSetTest() {
+        System.out.println("Testing casting of a function to a DoublesDataSet");
+        
+        double[] points = UltraNewIntegration.generateXPoints(0.0, 1.0, 11, false);
+        
+        double[] zeroOrder = {1.0}; // f(x) = 1
+        double[] firstOrder = {2.0, 1.0}; // f(x) = x+2
+        double[] secondOrder = {1.5, -4.0, 1.0}; // f(x) = x^2 - 4x + 1.5
+        double[] thirdOrder = {2.0, -1.0, -3.0, 1.0}; // f(x) = x^3 - 3x^2 - x + 2
+        double[] fourthOrder = {1, -4.0, -6.0, 4.0, 1.0}; // f(x) = x^4 + 4x^3 - 6x^2 - 4x + 1
+        double[] fifthOrder = {2.0, 10.0, -18.0, 8.0, -5.0, 1.0}; // f(x) = x^5 - 5x^4 + 8x^3 - 18x^2 + 10x + 2
+        
+        // Accumulate the coefficients into a 2-D array.
+        double[][] coeffs = {zeroOrder, firstOrder, secondOrder, thirdOrder, fourthOrder, fifthOrder};
+        List<FunctionDataCurve> polynomials = Arrays.stream(coeffs).map((double[] coeff) -> {
+            return new PolynomialCurve(points, false, coeff);
+        }).collect(Collectors.toList());
+        
+        for (FunctionDataCurve pn : polynomials) {
+            DataSet dpn = new DoublesDataSet(pn);
+            
+            for (int j = 0; j < NUM_INTEGRATION_TYPES; j++) {
+                IntegrationResult rpn = new IntegrationResult(pn, j);
+                IntegrationResult rdpn = new IntegrationResult(dpn, j);
+                
+                double pnVal = rpn.getValue();
+                double dpnVal = rdpn.getValue();
+                
+                String message = String.format(" Casted function:\n%s\nfunction result %9.3g casted result %9.3g difference %9.3g\nintegration method %s", pn.toString(), pnVal, dpnVal, (pnVal - dpnVal), rpn.toString());
+                assertToUlp(message, pnVal, 10.0, dpnVal);
+            }
+        }
+        System.out.println("Polynomial casting tests without halved sides complete.");
+        
+        double[] points2 = UltraNewIntegration.generateXPoints(0.0, 1.0, 12, true);
+        polynomials = Arrays.stream(coeffs).map((double[] coeff) -> {
+            return new PolynomialCurve(points2, true, coeff);
+        }).collect(Collectors.toList());
+        
+        for (FunctionDataCurve pn : polynomials) {
+            DataSet dpn = new DoublesDataSet(pn);
+            
+            for (int j = 0; j < NUM_INTEGRATION_TYPES; j++) {
+                IntegrationResult rpn = new IntegrationResult(pn, j);
+                IntegrationResult rdpn = new IntegrationResult(dpn, j);
+                
+                double pnVal = rpn.getValue();
+                double dpnVal = rdpn.getValue();
+                
+                String message = String.format(" Casted function:\n%s\nfunction result %9.3g casted result %9.3g difference %9.3g\nintegration method %s", pn.toString(), pnVal, dpnVal, (pnVal - dpnVal), rpn.toString());
+                assertToUlp(message, pnVal, 10.0, dpnVal);
+            }
+        }
+        System.out.println("Polynomial casting tests with halved sides complete.");
+        
+        double[] sinePoints = UltraNewIntegration.generateXPoints(0, 4.0, 101, false);
+        FunctionDataCurve sinWave = new SinWave(sinePoints, false, 20, 30);
+        DataSet dsw = new DoublesDataSet(sinWave);
+        
+        for (int j = 0; j < NUM_INTEGRATION_TYPES; j++) {
+            IntegrationResult rsw = new IntegrationResult(sinWave, j);
+            IntegrationResult rdsw = new IntegrationResult(dsw, j);
+            
+            double swVal = rsw.getValue();
+            double dswVal = rdsw.getValue();
+            
+            String message = String.format(" Casted function:\n%s\nfunction result %9.3g casted result %9.3g difference %9.3g\nintegration method %s", sinWave.toString(), swVal, dswVal, (swVal - dswVal), rsw.toString());
+            assertToUlp(message, swVal, 10.0, dswVal);
+        }
+        System.out.println("Sine-wave casting tests with halved sides complete.");
+        
+        double[] sinePoints2 = UltraNewIntegration.generateXPoints(0, 4.0, 102, true);
+        sinWave = new SinWave(sinePoints2, true, 20, 30);
+        dsw = new DoublesDataSet(sinWave);
+        
+        for (int j = 0; j < NUM_INTEGRATION_TYPES; j++) {
+            IntegrationResult rsw = new IntegrationResult(sinWave, j);
+            IntegrationResult rdsw = new IntegrationResult(dsw, j);
+            
+            double swVal = rsw.getValue();
+            double dswVal = rdsw.getValue();
+            
+            String message = String.format(" Casted function:\n%s\nfunction result %9.3g casted result %9.3g difference %9.3g\nintegration method %s", sinWave.toString(), swVal, dswVal, (swVal - dswVal), rsw.toString());
+            assertToUlp(message, swVal, 10.0, dswVal);
+        }
+        System.out.println("Sine-wave casting tests with halved sides complete.");
+        System.out.println("Casting tests complete.");
     }
     
     /**
@@ -433,6 +543,19 @@ public class UltraNewJUnit {
         double ulp = Math.ulp(trueVal) * ulpMult;
         for (double val : values) {
             assertEquals(trueVal, val, ulp);
+        }
+    }
+    
+    /**
+     * Assert that doubles are equal to within a multiplier of ulp (machine precision).
+     * @param trueVal
+     * @param ulpMult
+     * @param values 
+     */
+    private static void assertToUlp(String message, double trueVal, double ulpMult, double... values) {
+        double ulp = Math.ulp(trueVal) * ulpMult;
+        for (double val : values) {
+            assertEquals(message, trueVal, val, ulp);
         }
     }
 
@@ -528,6 +651,120 @@ public class UltraNewJUnit {
             System.out.println(" L/R Trap/Simp/Bool failiter: " + failIter[i]);
         }
         */
+        }
+    }
+    
+    /**
+     * Intended to be a shorthand way of performing all the standard 
+     * integrations, instead of tediously coding in separate tests for all
+     * four integration types in both directions; auto-assigns several fields
+     * based on the provided index.
+     */
+    private class IntegrationResult {
+        private final IntegrationType type;
+        private final IntegrationSide side;
+        private final boolean halvedSides;
+        private final DataSet data;
+        private final double integratedValue;
+        
+        /**
+         * Basic constructor, automatically setting direction and integration
+         * method based on index with a useful toString.
+         * 
+         * Even index values produce a left-hand integral, odd a right-hand 
+         * integral.
+         * 
+         * Integration type is as follows, 0-7, after modulo(8)
+         * 0-1: Rectangular
+         * 2-3: Trapezoidal
+         * 4-5: Simpson's rule
+         * 6-7: Boole's rule
+         * 
+         * @param data Data to numerically integrate
+         * @param index Automatically set method and direction
+         */
+        public IntegrationResult(DataSet data, int index) {
+            switch ((index / 2) % 4) {
+                case 0:
+                    type = IntegrationType.RECTANGULAR;
+                    break;
+                case 1:
+                    type = IntegrationType.TRAPEZOIDAL;
+                    break;
+                case 2:
+                    type = IntegrationType.SIMPSONS;
+                    break;
+                case 3:
+                    type = IntegrationType.BOOLE;
+                    break;
+                default:
+                    throw new IllegalArgumentException(" How did ((index / 2) % 4) ever come out to not be 0-3?");
+            }
+            side = (index % 2 == 0) ? LEFT : RIGHT;
+            halvedSides = data.halfWidthEnds();
+            this.data = data;
+            
+            switch(type) {
+                case RECTANGULAR:
+                    integratedValue = UltraNewIntegration.rectangular(data, side);
+                    break;
+                case TRAPEZOIDAL:
+                    integratedValue = UltraNewIntegration.trapezoidal(data, side);
+                    break;
+                case SIMPSONS:
+                    integratedValue = UltraNewIntegration.simpsons(data, side);
+                    break;
+                case BOOLE:
+                    integratedValue = UltraNewIntegration.booles(data, side);
+                    break;
+                default:
+                    throw new IllegalArgumentException(" How did this end up with an integration type not rectangular, trapezoidal, Simpson's, or Boole's?");
+            }
+        }
+        
+        public IntegrationType getType() {
+            return type;
+        }
+        
+        public IntegrationSide getSide() {
+            return side;
+        }
+        
+        public DataSet getDataSet() {
+            return data;
+        }
+        
+        public boolean getHalvedSides() {
+            return halvedSides;
+        }
+        
+        public double getValue() {
+            return integratedValue;
+        }
+        
+        @Override
+        public String toString() {
+            /*StringBuilder sb = new StringBuilder(type.toString().toLowerCase());
+            sb.append(" ").append(side.toString().toLowerCase());
+            sb.append("-side integral, value ").append(String.format("%9.3g", integratedValue));
+            sb.append(" from range ");
+            double lb = data.lowerBound();
+            double ub = data.upperBound();
+            double sep = data.binWidth();
+            sb.append(String.format("%9.3g to %9.3g with %9.3g point separation", lb, ub, sep));
+            if (halvedSides) {
+                sb.append(" and half-width ending bins");
+            }
+            sb.append(".");
+            return sb.toString();*/
+            StringBuilder sb = new StringBuilder(type.toString().toLowerCase());
+            sb.append(", ").append(side.toString().toLowerCase());
+            sb.append("-side integral");
+            if (halvedSides) {
+                sb.append(" with half-width ending bins");
+            }
+            sb.append(".");
+            return sb.toString();
         }
     }
 }

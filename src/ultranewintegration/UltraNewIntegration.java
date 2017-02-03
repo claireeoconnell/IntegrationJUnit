@@ -218,6 +218,7 @@ public class UltraNewIntegration {
         return points;
     }
 
+    @Deprecated
     public static double HalfBinComposite(double[] inputData, IntegrationType type, IntegrationSide side) {
         double halfBinComposite = 0, lowerHalfBin, upperHalfBin, upperTrapArea;
         double lowerTrapArea, upperSimpson, lowerSimpson;
@@ -306,6 +307,7 @@ public class UltraNewIntegration {
         return area;
     }
 
+    @Deprecated
     public static double trapInputLeft(double[] inputData, double width) {
         double trapIntegral = 0, sum, area, total;
 
@@ -334,6 +336,7 @@ public class UltraNewIntegration {
         return trapIntegral;
     }
 
+    @Deprecated
     public static double trapInputRight(double[] inputData, double width) {
         double trapIntegral = 0, sum, area, total;
         int n = 0;
@@ -409,6 +412,22 @@ public class UltraNewIntegration {
         return area;
     }
     
+    /**
+     * Integrates the remaining points after higher-order integration rules
+     * cannot evenly fit over the remaining data. For example, Boole's rule 
+     * requires 5 points; if a data set has 7 points, it will integrate the
+     * first 5, but not handle the remaining 2; this method will, apply the 
+     * highest-order integration rule that the remaining points (including the 
+     * last one used previously) permit. In that case, it would be Simpson's
+     * rule.
+     * 
+     * @param data
+     * @param side
+     * @param lb
+     * @param ub
+     * @param type Highest-order rule permitted to finish integration.
+     * @return 
+     */
     private static double finishIntegration(DataSet data, IntegrationSide side, int lb, int ub, IntegrationType type) {
         int totPoints = (ub - lb);
         
@@ -477,6 +496,7 @@ public class UltraNewIntegration {
         return area;
     }
     
+    @Deprecated
     public static double simpsonsLeft(double[] inputData, double width) {
         double normalSimpsons = 0, area, sum, total;
         int n;
@@ -498,6 +518,7 @@ public class UltraNewIntegration {
         return normalSimpsons;
     }
 
+    @Deprecated
     public static double simpsonsRight(double[] inputData, double width) {
         double normalSimpsons = 0, area;
         int n;
@@ -564,6 +585,7 @@ public class UltraNewIntegration {
         return area;
     }
 
+    @Deprecated
     public static double booleLeft(double[] inputData, double width) {
         double normalBoole = 0, area;
         int n;
@@ -588,6 +610,7 @@ public class UltraNewIntegration {
         return booleRight(inputData, DEFAULT_WIDTH);
     }
 
+    @Deprecated
     public static double booleRight(double[] inputData, double width) {
         double normalBoole = 0, area;
         int n;
@@ -607,48 +630,12 @@ public class UltraNewIntegration {
         return normalBoole;
     }
     
-    private static double finishIntegrationLeft(double[] inputData, int pos, IntegrationType maxLevel, double width) {
-        int nBins = inputData.length;
-        int remainingBins = nBins - pos;
-        double[] subset = new double[remainingBins];
-        System.arraycopy(inputData, pos, subset, 0, remainingBins);
-        
-        int levelwidth = maxLevel.binsNeeded();
-        int fullBins = remainingBins / levelwidth;
-        
-        double area = 0;
-        if (fullBins > 0) {
-            switch (maxLevel) {
-                case BOOLE:
-                    area = booleLeft(subset, width);
-                    break;
-                case SIMPSONS:
-                    area = simpsonsLeft(subset, width);
-                    break;
-                case TRAPEZOIDAL:
-                    area = trapInputLeft(subset, width);
-                    break;
-                case RECTANGULAR:
-                    area = rectangularMethodLeft(subset, width);
-                    break;
-            }
-        }
-        
-        pos += (levelwidth * fullBins);
-        subset = new double[remainingBins];
-        System.arraycopy(inputData, pos, subset, 0, remainingBins);
-        switch(remainingBins) {
-            case 1:
-                break;
-        }
-        return 0;
-    }
-    
     @Deprecated
     public static double rectangularMethodLeft(double[] inputData) {
         return rectangularMethodLeft(inputData, DEFAULT_WIDTH);
     }
 
+    @Deprecated
     public static double rectangularMethodLeft(double[] inputData, double width) {
         /*double rectangularIntegral = 0, area;
         double[] y = new double[202];
@@ -731,6 +718,7 @@ public class UltraNewIntegration {
         return rectangularMethodRight(inputData, DEFAULT_WIDTH);
     }
 
+    @Deprecated
     public static double rectangularMethodRight(double[] inputData, double width) {
         /*double rectangularIntegral = 0, area = 0;
         double[] y = new double[202];
@@ -778,8 +766,20 @@ public class UltraNewIntegration {
         }
     }
     
+    /**
+     * Functional interface used to select an integration method (primarily for
+     * finishIntegration).
+     */
     @FunctionalInterface
     private static interface IntegrateWindow {
+        /**
+         * Numerically integrates a range of x given f(x).
+         * @param data x and f(x) data to integrate
+         * @param side Side to integrate from
+         * @param lb Lower bound of x[] to integrate
+         * @param ub Upper bound of x[] to integrate
+         * @return Area of integral f(x) dx, from point lb to point ub
+         */
         public abstract double toArea(DataSet data, IntegrationSide side, int lb, int ub);
     }
 }
