@@ -2,3 +2,4 @@ nbproject
 build
 nbbuild.xml
 /dist/
+build.xml
