@@ -39,7 +39,9 @@ package ultranewintegration;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
 
 /**
  * This program integrates using three methods: the trapezoidal method,
@@ -272,6 +274,30 @@ public class UltraNewIntegration {
         return halfBinComposite;
     }
     
+    public static double trapezoidalParallel(DataSet data, IntegrationSide side) {
+        double area = 0;
+        int lb = 0;
+        int ub = data.numPoints() - 1;
+        if (data.halfWidthEnds()) {
+            area = trapezoidalEnds(data, side);
+            lb++;
+            ub--;
+        }
+        area += trapezoidalParallel(data, side, lb, ub);
+        return area;
+    }
+    
+    public static double trapezoidalParallel(DataSet data, IntegrationSide side, int lb, int ub) {
+        double width = data.binWidth();
+        double[] points = data.getAllFxPoints();
+        
+        double area = 0.5 * points[lb];
+        area += 0.5 * points[ub];
+        area += IntStream.range(lb+1, ub).parallel().mapToDouble((int i) -> {return points[i];}).sum();
+        area *= width;
+        return area;
+    }
+    
     public static double trapezoidal(DataSet data, IntegrationSide side) {
         double area = 0;
         int lb = 0;
@@ -286,7 +312,6 @@ public class UltraNewIntegration {
     }
     
     public static double trapezoidal(DataSet data, IntegrationSide side, int lb, int ub) {
-        int nPoints = data.numPoints();
         double width = data.binWidth();
         double[] points = data.getAllFxPoints();
         
@@ -363,6 +388,61 @@ public class UltraNewIntegration {
         }
 
         return trapIntegral;
+    }
+    
+    public static double simpsonsParallel(DataSet data, IntegrationSide side) {
+        double area = 0;
+        int lb = 0;
+        int ub = data.numPoints() - 1;
+        if (data.halfWidthEnds()) {
+            area = trapezoidalEnds(data, side);
+            lb++;
+            ub--;
+        }
+        area += simpsonsParallel(data, side, lb, ub);
+        return area;
+    }
+
+    public static double simpsonsParallel(DataSet data, IntegrationSide side, int lb, int ub) {
+        double area = 0;
+        double width = data.binWidth();
+        double[] points = data.getAllFxPoints();
+        int increment = 2;
+        
+        int nBins = (ub - lb) / increment;
+        int lowerNeglected;
+        int upperNeglected;
+        
+        switch (side) {
+            case RIGHT:
+                /*for (int i = ub; i > (lb + increment - 1); i -= increment) {
+                    area += points[i] + (4*points[i-1]) + points[i-2];
+                }*/
+                lowerNeglected = lb;
+                upperNeglected = ub - (increment*nBins);
+                area = IntStream.range(0, nBins).parallel().mapToDouble((int i) -> {
+                    int fromPoint = ub - (increment * i);
+                    return (points[fromPoint - 2] + 4*points[fromPoint - 1] + points[fromPoint]);
+                }).sum();
+                break;
+            case LEFT:
+            default:
+                /*for (int i = lb; i < (ub - increment + 1); i+= increment) {
+                    area += points[i] + (4*points[i+1]) + points[i+2];
+                }*/
+                area = IntStream.range(0, nBins).parallel().mapToDouble((int i) -> {
+                    int fromPoint = lb + (increment * i);
+                    return (points[fromPoint] + 4*points[fromPoint + 1] + points[fromPoint + 2]);
+                }).sum();
+                lowerNeglected = lb + (increment*nBins);
+                upperNeglected = ub;
+                break;
+        }
+        area *= ONE_THIRD;
+        area *= width;
+        
+        area += finishIntegration(data, side, lowerNeglected, upperNeglected, IntegrationType.SIMPSONS);
+        return area;
     }
     
     public static double simpsons(DataSet data, IntegrationSide side) {
@@ -538,6 +618,61 @@ public class UltraNewIntegration {
         return normalSimpsons;
     }
     
+    public static double boolesParallel(DataSet data, IntegrationSide side) {
+        double area = 0;
+        int lb = 0;
+        int ub = data.numPoints() - 1;
+        if (data.halfWidthEnds()) {
+            area = trapezoidalEnds(data, side);
+            lb++;
+            ub--;
+        }
+        area += boolesParallel(data, side, lb, ub);
+        return area;
+    }
+
+    public static double boolesParallel(DataSet data, IntegrationSide side, int lb, int ub) {
+        double area = 0;
+        double width = data.binWidth();
+        double[] points = data.getAllFxPoints();
+        int increment = 4;
+        
+        int nBins = (ub - lb) / increment;
+        int lowerNeglected;
+        int upperNeglected;
+        
+        switch (side) {
+            case RIGHT:
+                /*for (int i = ub; i > (lb + increment - 1); i -= increment) {
+                    area += (7 * points[i] + 32*points[i-1] + 12*points[i-2] + 32*points[i-3] + 7*points[i-4]);
+                }*/
+                lowerNeglected = lb;
+                upperNeglected = ub - (increment*nBins);
+                area = IntStream.range(0, nBins).parallel().mapToDouble((int i) -> {
+                    int fromPoint = ub - (increment * i);
+                    return (7 * points[fromPoint - 4] + 32*points[fromPoint - 3] + 12*points[fromPoint - 2] + 32*points[fromPoint - 1] + 7*points[fromPoint]);
+                }).sum();
+                break;
+            case LEFT:
+            default:
+                /*for (int i = lb; i < (ub - increment + 1); i+= increment) {
+                    area += (7*points[i] + 32*points[i+1] + 12*points[i+2] + 32*points[i+3] + 7*points[i+4]);
+                }*/
+                lowerNeglected = lb + (increment*nBins);
+                upperNeglected = ub;
+                area = IntStream.range(0, nBins).parallel().mapToDouble((int i) -> {
+                    int fromPoint = lb + (increment * i);
+                    return (7*points[fromPoint] + 32*points[fromPoint + 1] + 12*points[fromPoint + 2] + 32*points[fromPoint + 3] + 7*points[fromPoint + 4]);
+                }).sum();
+                break;
+        }
+        area *= BOOLE_FACTOR;
+        area *= width;
+        
+        area += finishIntegration(data, side, lowerNeglected, upperNeglected, IntegrationType.BOOLE);
+        return area;
+    }
+    
     public static double booles(DataSet data, IntegrationSide side) {
         double area = 0;
         int lb = 0;
@@ -658,6 +793,32 @@ public class UltraNewIntegration {
             area += (inputData[a] * width);
         }
         return area;
+    }
+    
+    public static double rectangularParallel(DataSet data, IntegrationSide side) {
+        double area = 0;
+        int lb = 0;
+        int ub = data.numPoints() - 1;
+        if (data.halfWidthEnds()) {
+            area = rectangularEnds(data, side);
+            ++lb;
+            --ub;
+        }
+        area += rectangularParallel(data, side, lb, ub);
+        return area;
+    }
+    
+    public static double rectangularParallel(DataSet data, IntegrationSide side, int lb, int ub) {
+        double width = data.binWidth();
+        double[] points = data.getAllFxPoints();
+        assert ub > lb;
+        assert ub < points.length;
+        
+        if (side == IntegrationSide.RIGHT) {
+            ++ub;
+            ++lb;
+        }
+        return IntStream.range(lb, ub).parallel().mapToDouble((int i) -> {return points[i] * width;}).sum();
     }
     
     public static double rectangular(DataSet data, IntegrationSide side) {

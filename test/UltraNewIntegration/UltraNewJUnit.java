@@ -558,6 +558,20 @@ public class UltraNewJUnit {
             assertEquals(message, trueVal, val, ulp);
         }
     }
+    
+    @Test
+    public void parallelTest() {
+        double[] pts = UltraNewIntegration.generateXPoints(0, 2.0, 92, false);
+        FunctionDataCurve tcurve = new SinWave(pts, false, 60, 60);
+        for (int i = 0; i < NUM_INTEGRATION_TYPES; i++) {
+            IntegrationResult seqResult = new IntegrationResult(tcurve, i, false);
+            IntegrationResult parResult = new IntegrationResult(tcurve, i, true);
+            double seqVal = seqResult.getValue();
+            double parVal = parResult.getValue();
+            String message = String.format("Parallel value %9.3g did not match sequential value %9.3g, error %9.3g", parVal, seqVal, (parVal - seqVal));
+            assertToUlp(message, seqVal, 80.0, parVal);
+        }
+    }
 
     /**
      * Compares the calculated integrals with the known values.
@@ -666,6 +680,7 @@ public class UltraNewJUnit {
         private final boolean halvedSides;
         private final DataSet data;
         private final double integratedValue;
+        private final boolean parallel;
         
         /**
          * Basic constructor, automatically setting direction and integration
@@ -684,6 +699,10 @@ public class UltraNewJUnit {
          * @param index Automatically set method and direction
          */
         public IntegrationResult(DataSet data, int index) {
+            this(data, index, false);
+        }
+        
+        public IntegrationResult(DataSet data, int index, boolean parallel) {
             switch ((index / 2) % 4) {
                 case 0:
                     type = IntegrationType.RECTANGULAR;
@@ -703,22 +722,43 @@ public class UltraNewJUnit {
             side = (index % 2 == 0) ? LEFT : RIGHT;
             halvedSides = data.halfWidthEnds();
             this.data = data;
+            this.parallel = parallel;
             
-            switch(type) {
-                case RECTANGULAR:
-                    integratedValue = UltraNewIntegration.rectangular(data, side);
-                    break;
-                case TRAPEZOIDAL:
-                    integratedValue = UltraNewIntegration.trapezoidal(data, side);
-                    break;
-                case SIMPSONS:
-                    integratedValue = UltraNewIntegration.simpsons(data, side);
-                    break;
-                case BOOLE:
-                    integratedValue = UltraNewIntegration.booles(data, side);
-                    break;
-                default:
-                    throw new IllegalArgumentException(" How did this end up with an integration type not rectangular, trapezoidal, Simpson's, or Boole's?");
+            if (parallel) {
+                switch(type) {
+                    case RECTANGULAR:
+                        integratedValue = UltraNewIntegration.rectangularParallel(data, side);
+                        break;
+                    case TRAPEZOIDAL:
+                        integratedValue = UltraNewIntegration.trapezoidalParallel(data, side);
+                        break;
+                    case SIMPSONS:
+                        integratedValue = UltraNewIntegration.simpsonsParallel(data, side);
+                        break;
+                    case BOOLE:
+                        integratedValue = UltraNewIntegration.boolesParallel(data, side);
+                        break;
+                    default:
+                        throw new IllegalArgumentException(" How did this end up with an integration type not rectangular, trapezoidal, Simpson's, or Boole's?");
+                }
+                
+            } else {
+                switch(type) {
+                    case RECTANGULAR:
+                        integratedValue = UltraNewIntegration.rectangular(data, side);
+                        break;
+                    case TRAPEZOIDAL:
+                        integratedValue = UltraNewIntegration.trapezoidal(data, side);
+                        break;
+                    case SIMPSONS:
+                        integratedValue = UltraNewIntegration.simpsons(data, side);
+                        break;
+                    case BOOLE:
+                        integratedValue = UltraNewIntegration.booles(data, side);
+                        break;
+                    default:
+                        throw new IllegalArgumentException(" How did this end up with an integration type not rectangular, trapezoidal, Simpson's, or Boole's?");
+                }
             }
         }
         
