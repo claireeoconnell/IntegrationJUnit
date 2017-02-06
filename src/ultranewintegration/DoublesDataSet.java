@@ -42,7 +42,7 @@ public class DoublesDataSet implements DataSet {
         halfWidthEnd = halvedEnds;
         double sepDist = ub - lb;
         sep = halfWidthEnd ? (sepDist / ((double) nX-2)) : (sepDist / ((double) nX-1));
-        assertXIntegrity(x);
+        assertXIntegrity(this.x);
     }
     
     public DoublesDataSet(DataSet set) {

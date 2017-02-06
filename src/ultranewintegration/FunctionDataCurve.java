@@ -6,9 +6,9 @@
 package ultranewintegration;
 
 /**
- * A DataCurve represents a set of points along a 1-dimensional, integrable 
- * function.
- * @author Jacob
+ * A FunctionDataCurve represents a set of points along a 1-dimensional, 
+ * analytically integrable function.
+ * @author Jacob M. Litman
  */
 public abstract class FunctionDataCurve implements DataSet {
     protected double lb;

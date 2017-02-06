@@ -76,6 +76,11 @@ public class CompositeCurve extends FunctionDataCurve {
     
     @Override
     public double fX(double x) {
+        return valAt(x);
+    }
+    
+    // Private, non-overrideable method for use in the constructor.
+    private double valAt(double x) {
         double val = 0.0;
         for (int i = 0; i < nCurves; i++) {
             val += (curves[i].fX(x) * coeffs[i]);

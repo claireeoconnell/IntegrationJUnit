@@ -6,17 +6,31 @@
 package ultranewintegration;
 
 /**
- * A CubicCurve describes points along a polynomial function.
+ * A PolynomialCurve describes points along a polynomial function.
  * @author Jacob M. Litman
  */
 public class PolynomialCurve extends FunctionDataCurve {
     
     private final double[] coeff;
 
+    /**
+     * Default constructor, assumes constant-width bins. Functional form will
+     * be a0 + a1x + a2x^2 + a3x^3 + ... + anx^n.
+     * @param x
+     * @param coefficients Lowest-order coefficients first
+     */
     public PolynomialCurve(double[] x, double[] coefficients) {
         this(x, false, coefficients);
     }
     
+
+    /**
+     * Default constructor, assumes constant-width bins. Functional form will
+     * be a0 + a1x + a2x^2 + a3x^3 + ... + anx^n.
+     * @param x
+     * @param halfWidthEnds Specifies that first and last bins are half-width.l
+     * @param coefficients Lowest-order coefficients first
+     */
     public PolynomialCurve(double[] x, boolean halfWidthEnds, double[] coefficients) {
         int npoints = x.length;
         points = new double[npoints];
@@ -25,7 +39,7 @@ public class PolynomialCurve extends FunctionDataCurve {
         this.halfWidthEnd = halfWidthEnds;
         
         for (int i = 0; i < points.length; i++) {
-            points[i] = fX(x[i]);
+            points[i] = polynomialAt(x[i]);
         }
         lb = x[0];
         ub = x[npoints-1];
@@ -51,6 +65,11 @@ public class PolynomialCurve extends FunctionDataCurve {
     
     @Override
     public double fX(double x) {
+        return polynomialAt(x);
+    }
+    
+    // Private, non-overrideable method for use in the constructor.
+    private double polynomialAt(double x) {
         double total = 0.0;
         for (int i = 0; i < coeff.length; i++) {
             double val = coeff[i];

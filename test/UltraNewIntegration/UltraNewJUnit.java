@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -35,93 +34,16 @@ import static ultranewintegration.UltraNewIntegration.IntegrationSide.*;
  * @author ceoconnell
  */
 public class UltraNewJUnit {
-
-    /**
-     * Create array with pointers to doubles that will contain known integrals.
-     */
-    private double[] knownIntegral;
     
     private final static int NUM_INTEGRATION_TYPES = 8; // Left/right, rect/trap/simp/boole.
-    private final static double[] x = new double[201];
-
-    static {
-        /*x[0] = 0;
-        for (int i = 1; i < 201; i++) {
-            x[i] = .0025 + .005 * (i - 1);
-        }
-        x[201] = 1;*/
-        for (int i = 0; i < x.length; i++) {
-            x[i] = i * 0.005;
-        }
-    }
-
-    /*
-     Set the delta value for the assertEquals comparison
-     */
-    private final double DELTA = .1;
-
-    /**
-     * Initializes the array before testing.
-     */
-    @Before
-    public void setUp() {
-        // Instantiate the knownIntegral array.
-        knownIntegral = new double[8];
-
-        /*The answers are in the order of the trapezoidal integral first, the
-         Simpson's second, Boole's third, and rectangular method last. The 
-         integrals are calculated with the bounds 1 and 201 with an interval of 
-         .1. The first four are using left hand integrals and the second four
-         use right hand integrals.
-         */
-        /*knownIntegral[0] = 2.9684353512887753;
-         knownIntegral[1] = 2.9687126459508564;
-         knownIntegral[2] = 2.968712622691869;
-         knownIntegral[3] = 2.936215172510247;
-        
-         knownIntegral[4] = 3.0006927996084642;
-         knownIntegral[5] = 3.000977174918476;
-         knownIntegral[6] = 3.000977149598709;
-         knownIntegral[7] = 2.968898509509485;
-         */
-    }
-
-    public static double[] generateTestData(int j, boolean flip) {
-        double[] data = generateTestData(j);
-        double[] y = new double[data.length];
-        for (int i = 0; i < data.length; i++) {
-            y[i] = data[201 - i];
-        }
-        return y;
-    }
-
-    public static double[] generateTestData(int j) {
-
-        double y[] = new double[201];
-
-        for (int i = 0; i < 202; i++) {
-            y[i] = j * Math.sin(j * x[i]);
-        }
-
-        return y;
-    }
-
-    public static double[] generateReverseData(double[] data) {
-        double reverseData[] = new double[201];
-
-        for (int i = 0; i < 201; i++) {
-            reverseData[201 - i] = data[i];
-        }
-
-        return reverseData;
-    }
-
-    private double analyticIntegral(int j) {
-        double val = 0;
-        val = -Math.cos(j) + 1;
-        return val;
-    }
     
+    /**
+     * Basic test for polynomial functions; checks to ensure that each integration
+     * method is behaving as expected, and returns the exact value (to within
+     * machine precision) when the method should be exact. For example, Simpson's
+     * method fits a quadratic curve to 3 points, and should return the exact
+     * integral for polynomials of degree 2 or less.
+     */
     @Test
     public void polynomialTest() {
         System.out.println("Testing integration methods on polynomials with known integrals.");
@@ -251,7 +173,7 @@ public class UltraNewJUnit {
     
     /**
      * A more difficult test on polynomials, with just five points and larger
-     * coefficients
+     * coefficients; intended to test stability in extreme cases.
      */
     @Test
     public void polynomialGrinderTest () {
@@ -332,6 +254,14 @@ public class UltraNewJUnit {
         System.out.println("\n");
     }
     
+    /**
+     * Common code for testing sin/cosine waves; effectively a sub-method for 
+     * the testSinCosine test.
+     * @param points
+     * @param halvedEnds
+     * @param cosine If cosine, else sine wave
+     * @param verbose 
+     */
     public void sinTest(double[] points, boolean halvedEnds, boolean cosine, boolean verbose) {
         int failRleft = 0;
         int failRright = 0;
@@ -443,6 +373,11 @@ public class UltraNewJUnit {
         }
     }
     
+    /**
+     * Ensures that integration performs the same on a DoublesDataSet constructed
+     * from a function as directly from the function; uses both DoublesDataSet
+     * constructors.
+     */
     @Test
     public void castToDoubleSetTest() {
         System.out.println("Testing casting of a function to a DoublesDataSet");
@@ -464,16 +399,24 @@ public class UltraNewJUnit {
         
         for (FunctionDataCurve pn : polynomials) {
             DataSet dpn = new DoublesDataSet(pn);
+            double[] ypts = pn.getAllFxPoints();
+            DataSet abInitio = new DoublesDataSet(points, ypts, false);
             
             for (int j = 0; j < NUM_INTEGRATION_TYPES; j++) {
                 IntegrationResult rpn = new IntegrationResult(pn, j);
                 IntegrationResult rdpn = new IntegrationResult(dpn, j);
+                IntegrationResult raipn = new IntegrationResult(abInitio, j);
                 
                 double pnVal = rpn.getValue();
                 double dpnVal = rdpn.getValue();
+                double aipnVal = raipn.getValue();
                 
-                String message = String.format(" Casted function:\n%s\nfunction result %9.3g casted result %9.3g difference %9.3g\nintegration method %s", pn.toString(), pnVal, dpnVal, (pnVal - dpnVal), rpn.toString());
-                assertToUlp(message, pnVal, 10.0, dpnVal);
+                String message = String.format(" Casted function:\n%s\nfunction "
+                        + "result %9.3g, casted result %9.3g, from points %9.3g, "
+                        + "difference to casted %9.3g, difference to from-points %9.3g"
+                        + "\nintegration method %s", pn.toString(), pnVal, dpnVal, 
+                        aipnVal, (pnVal - dpnVal), (pnVal - aipnVal), rpn.toString());
+                assertToUlp(message, pnVal, 10.0, dpnVal, aipnVal);
             }
         }
         System.out.println("Polynomial casting tests without halved sides complete.");
@@ -485,16 +428,24 @@ public class UltraNewJUnit {
         
         for (FunctionDataCurve pn : polynomials) {
             DataSet dpn = new DoublesDataSet(pn);
+            double[] ypts = pn.getAllFxPoints();
+            DataSet abInitio = new DoublesDataSet(points2, ypts, true);
             
             for (int j = 0; j < NUM_INTEGRATION_TYPES; j++) {
                 IntegrationResult rpn = new IntegrationResult(pn, j);
                 IntegrationResult rdpn = new IntegrationResult(dpn, j);
+                IntegrationResult raipn = new IntegrationResult(abInitio, j);
                 
                 double pnVal = rpn.getValue();
                 double dpnVal = rdpn.getValue();
+                double aipnVal = raipn.getValue();
                 
-                String message = String.format(" Casted function:\n%s\nfunction result %9.3g casted result %9.3g difference %9.3g\nintegration method %s", pn.toString(), pnVal, dpnVal, (pnVal - dpnVal), rpn.toString());
-                assertToUlp(message, pnVal, 10.0, dpnVal);
+                String message = String.format(" Casted function:\n%s\nfunction "
+                        + "result %9.3g, casted result %9.3g, from points %9.3g, "
+                        + "difference to casted %9.3g, difference to from-points %9.3g"
+                        + "\nintegration method %s", pn.toString(), pnVal, dpnVal, 
+                        aipnVal, (pnVal - dpnVal), (pnVal - aipnVal), rpn.toString());
+                assertToUlp(message, pnVal, 10.0, dpnVal, aipnVal);
             }
         }
         System.out.println("Polynomial casting tests with halved sides complete.");
@@ -502,32 +453,48 @@ public class UltraNewJUnit {
         double[] sinePoints = UltraNewIntegration.generateXPoints(0, 4.0, 101, false);
         FunctionDataCurve sinWave = new SinWave(sinePoints, false, 20, 30);
         DataSet dsw = new DoublesDataSet(sinWave);
+        double[] ypts = sinWave.getAllFxPoints();
+        DataSet abInitio = new DoublesDataSet(sinePoints, ypts, false);
         
         for (int j = 0; j < NUM_INTEGRATION_TYPES; j++) {
             IntegrationResult rsw = new IntegrationResult(sinWave, j);
             IntegrationResult rdsw = new IntegrationResult(dsw, j);
+            IntegrationResult raisw = new IntegrationResult(abInitio, j);
             
             double swVal = rsw.getValue();
             double dswVal = rdsw.getValue();
-            
-            String message = String.format(" Casted function:\n%s\nfunction result %9.3g casted result %9.3g difference %9.3g\nintegration method %s", sinWave.toString(), swVal, dswVal, (swVal - dswVal), rsw.toString());
-            assertToUlp(message, swVal, 10.0, dswVal);
+            double aiswVal = raisw.getValue();
+                
+            String message = String.format(" Casted function:\n%s\nfunction "
+                    + "result %9.3g, casted result %9.3g, from points %9.3g, "
+                    + "difference to casted %9.3g, difference to from-points %9.3g"
+                    + "\nintegration method %s", sinWave.toString(), swVal, dswVal, 
+                    aiswVal, (swVal - dswVal), (swVal - aiswVal), rsw.toString());
+            assertToUlp(message, swVal, 10.0, dswVal, aiswVal);
         }
         System.out.println("Sine-wave casting tests with halved sides complete.");
         
         double[] sinePoints2 = UltraNewIntegration.generateXPoints(0, 4.0, 102, true);
         sinWave = new SinWave(sinePoints2, true, 20, 30);
         dsw = new DoublesDataSet(sinWave);
+        ypts = sinWave.getAllFxPoints();
+        abInitio = new DoublesDataSet(sinePoints2, ypts, true);
         
         for (int j = 0; j < NUM_INTEGRATION_TYPES; j++) {
             IntegrationResult rsw = new IntegrationResult(sinWave, j);
             IntegrationResult rdsw = new IntegrationResult(dsw, j);
+            IntegrationResult raisw = new IntegrationResult(abInitio, j);
             
             double swVal = rsw.getValue();
             double dswVal = rdsw.getValue();
-            
-            String message = String.format(" Casted function:\n%s\nfunction result %9.3g casted result %9.3g difference %9.3g\nintegration method %s", sinWave.toString(), swVal, dswVal, (swVal - dswVal), rsw.toString());
-            assertToUlp(message, swVal, 10.0, dswVal);
+            double aiswVal = raisw.getValue();
+                
+            String message = String.format(" Casted function:\n%s\nfunction "
+                    + "result %9.3g, casted result %9.3g, from points %9.3g, "
+                    + "difference to casted %9.3g, difference to from-points %9.3g"
+                    + "\nintegration method %s", sinWave.toString(), swVal, dswVal, 
+                    aiswVal, (swVal - dswVal), (swVal - aiswVal), rsw.toString());
+            assertToUlp(message, swVal, 10.0, dswVal, aiswVal);
         }
         System.out.println("Sine-wave casting tests with halved sides complete.");
         System.out.println("Casting tests complete.");
@@ -535,9 +502,9 @@ public class UltraNewJUnit {
     
     /**
      * Assert that doubles are equal to within a multiplier of ulp (machine precision).
-     * @param trueVal
-     * @param ulpMult
-     * @param values 
+     * @param trueVal True answer
+     * @param ulpMult Multiple of ulp to use
+     * @param values Values to check
      */
     private static void assertToUlp(double trueVal, double ulpMult, double... values) {
         double ulp = Math.ulp(trueVal) * ulpMult;
@@ -548,9 +515,10 @@ public class UltraNewJUnit {
     
     /**
      * Assert that doubles are equal to within a multiplier of ulp (machine precision).
-     * @param trueVal
-     * @param ulpMult
-     * @param values 
+     * @param message To print if assertion fails
+     * @param trueVal True answer
+     * @param ulpMult Multiple of ulp to use
+     * @param values Values to check
      */
     private static void assertToUlp(String message, double trueVal, double ulpMult, double... values) {
         double ulp = Math.ulp(trueVal) * ulpMult;
@@ -559,6 +527,13 @@ public class UltraNewJUnit {
         }
     }
     
+    /**
+     * Tests the parallelized versions of the integration methods. Overall,
+     * these are not recommended for production use; it would require an enormous
+     * number of points for numerical integration of a 1-D function to be at
+     * all significant for timing, and the parallelized versions are probably
+     * not quite as CPU-efficient.
+     */
     @Test
     public void parallelTest() {
         double[] pts = UltraNewIntegration.generateXPoints(0, 2.0, 92, false);
@@ -570,101 +545,6 @@ public class UltraNewJUnit {
             double parVal = parResult.getValue();
             String message = String.format("Parallel value %9.3g did not match sequential value %9.3g, error %9.3g", parVal, seqVal, (parVal - seqVal));
             assertToUlp(message, seqVal, 80.0, parVal);
-        }
-    }
-
-    /**
-     * Compares the calculated integrals with the known values.
-     */
-    @Test
-    public void integrationTest() {
-
-        /**
-         * Calculate the integrals using the left hand trapezoidal, Simpson's,
-         * and Boole's methods using data generated with the bounds 1 and 201
-         * with an interval of .1. The second four are the right handed
-         * integrals in the same order.
-         */
-        double[] calculatedIntegral = new double[6];
-        int[] failIter = new int[6];
-        /*
-         calculatedIntegral[0] = trapInputLeft(generateTestData_v1());
-         calculatedIntegral[1] = simpsonsLeft(generateTestData_v1())+HalfBinComposite(generateTestData_v1(),1,"left");
-         calculatedIntegral[2] = booleLeft(generateTestData_v1())+HalfBinComposite(generateTestData_v1(),2,"left");
-         calculatedIntegral[3] = rectangularMethodLeft(generateTestData_v1());
-        
-         calculatedIntegral[4] = trapInputRight(generateTestData_v1());
-         calculatedIntegral[5] = simpsonsRight(generateTestData_v1())+HalfBinComposite(generateTestData_v1(),1,"right");
-         calculatedIntegral[6] = booleRight(generateTestData_v1())+HalfBinComposite(generateTestData_v1(),2,"right");
-         calculatedIntegral[7] = rectangularMethodRight(generateTestData_v1());
-         */
-
-        // Assert that the known integrals and calculated integrals are the same.
-        //for (int i=0;i<500;i++){
-        for (int i = 1; i < 500; i++) {
-            //double trueVal = analyticIntegral(i);
-            //double[] testData = generateTestData(i);
-
-            /*calculatedIntegral[0] = trapInputLeft(testData);
-            calculatedIntegral[1] = simpsonsLeft(testData) + HalfBinComposite(testData, IntegrationType.SIMPSONS, IntegrationSide.LEFT);
-            calculatedIntegral[2] = booleLeft(testData) + HalfBinComposite(testData, IntegrationType.BOOLE, IntegrationSide.LEFT);
-            //calculatedIntegral[3] = rectangularMethodLeft(testData);
-
-            calculatedIntegral[3] = trapInputRight(testData);
-            calculatedIntegral[4] = simpsonsRight(testData) + HalfBinComposite(testData, IntegrationType.SIMPSONS, IntegrationSide.RIGHT);
-            calculatedIntegral[5] = booleRight(testData) + HalfBinComposite(testData, IntegrationType.BOOLE, IntegrationSide.RIGHT);
-            //calculatedIntegral[7] = rectangularMethodRight(testData);
-            */
-            
-            // Flip the data, input to alternate methods.
-            /*calculatedIntegral[0] = trapInputRight(testData);
-            calculatedIntegral[1] = simpsonsRight(testData)+HalfBinComposite(testData, IntegrationType.SIMPSONS,IntegrationSide.RIGHT);
-            calculatedIntegral[2] = booleRight(testData)+HalfBinComposite(testData, IntegrationType.BOOLE, IntegrationSide.RIGHT);
-            calculatedIntegral[3] = trapInputLeft(testData);
-            calculatedIntegral[4] = simpsonsLeft(testData)+HalfBinComposite(testData, IntegrationType.SIMPSONS, IntegrationSide.LEFT);
-            calculatedIntegral[5] = booleLeft(testData)+HalfBinComposite(testData, IntegrationType.BOOLE, IntegrationSide.LEFT);*/
-            
-            /*
-            System.out.print("\nSim number " + i + "\n\n");
-            //assertEquals(knownIntegral[i],calculatedIntegral[i], DELTA);
-            System.out.println("Analytic integral: " + trueVal);
-            System.out.println("lolzupdatez 17");
-            for (int j = 0; j < 6; j++) {
-                //int mode = j + 1;
-
-                switch (j) {
-                    case 0:
-                        System.out.print("Left Trapezoidal error ");
-                        break;
-                    case 1:
-                        System.out.print("Left Simpson's error ");
-                        break;
-                    case 2:
-                        System.out.print("Left Boole's error ");
-                        break;
-                    case 3:
-                        System.out.print("Right Trapezoidal error ");
-                        break;
-                    case 4:
-                        System.out.print("Right Simpson's error ");
-                        break;
-                    case 5:
-                        System.out.print("Right Boole's error ");
-                        break;
-
-                }
-                System.out.print(calculatedIntegral[j] - trueVal + "\n");
-                if (failIter[j] == 0 && Math.abs(trueVal - calculatedIntegral[j]) > DELTA) {
-                    failIter[j] = i;
-                }
-                //assertEquals(analyticIntegral(i),calculatedIntegral[j],DELTA);
-            }
-
-        }
-        for (int i = 0; i < 6; i++) {
-            System.out.println(" L/R Trap/Simp/Bool failiter: " + failIter[i]);
-        }
-        */
         }
     }
     
@@ -782,21 +662,12 @@ public class UltraNewJUnit {
             return integratedValue;
         }
         
+        public boolean isParallel() {
+            return parallel;
+        }
+        
         @Override
         public String toString() {
-            /*StringBuilder sb = new StringBuilder(type.toString().toLowerCase());
-            sb.append(" ").append(side.toString().toLowerCase());
-            sb.append("-side integral, value ").append(String.format("%9.3g", integratedValue));
-            sb.append(" from range ");
-            double lb = data.lowerBound();
-            double ub = data.upperBound();
-            double sep = data.binWidth();
-            sb.append(String.format("%9.3g to %9.3g with %9.3g point separation", lb, ub, sep));
-            if (halvedSides) {
-                sb.append(" and half-width ending bins");
-            }
-            sb.append(".");
-            return sb.toString();*/
             StringBuilder sb = new StringBuilder(type.toString().toLowerCase());
             sb.append(", ").append(side.toString().toLowerCase());
             sb.append("-side integral");
