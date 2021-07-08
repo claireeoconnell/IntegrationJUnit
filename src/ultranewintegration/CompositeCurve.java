@@ -36,6 +36,7 @@ public class CompositeCurve extends FunctionDataCurve {
         lb = curve0.lowerBound();
         ub = curve0.upperBound();
         halfWidthEnd = curve0.halfWidthEnds();
+        x = curve0.getX();
         double sep = curve0.binWidth();
         
         boolean isInvalid = Arrays.stream(curves).anyMatch((FunctionDataCurve c) -> {
@@ -59,7 +60,7 @@ public class CompositeCurve extends FunctionDataCurve {
         for (int i = 0; i < nPoints; i++) {
             points[i] = 0.0;
             for (int j = 0; j < nCurves; j++) {
-                points[i] += (coeffs[j] * curves[j].getPoint(i));
+                points[i] += (coeffs[j] * curves[j].getFxPoint(i));
             }
         }
     }
@@ -75,6 +76,11 @@ public class CompositeCurve extends FunctionDataCurve {
     
     @Override
     public double fX(double x) {
+        return valAt(x);
+    }
+    
+    // Private, non-overrideable method for use in the constructor.
+    private double valAt(double x) {
         double val = 0.0;
         for (int i = 0; i < nCurves; i++) {
             val += (curves[i].fX(x) * coeffs[i]);
@@ -84,5 +90,17 @@ public class CompositeCurve extends FunctionDataCurve {
     
     public List<FunctionDataCurve> getSubCurves() {
         return Arrays.asList(curves);
+    }
+    
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder(String.format("Composite curve with %d points from lower bound %9.3g and upper bound %9.3g", points.length, lb, ub));
+        if (halfWidthEnd) {
+            sb.append(" and half-width start/end bins.\nComponent curves:\n");
+        }
+        for (FunctionDataCurve curve : curves) {
+            sb.append(curve.toString());
+        }
+        return sb.toString();
     }
 }

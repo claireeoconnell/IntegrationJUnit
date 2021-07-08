@@ -6,15 +6,16 @@
 package ultranewintegration;
 
 /**
- * A DataCurve represents a set of points along a 1-dimensional, integrable 
- * function.
- * @author Jacob
+ * A FunctionDataCurve represents a set of points along a 1-dimensional, 
+ * analytically integrable function.
+ * @author Jacob M. Litman
  */
 public abstract class FunctionDataCurve implements DataSet {
     protected double lb;
     protected double ub;
     protected double[] points;
     protected boolean halfWidthEnd;
+    protected double[] x;
     
     @Override
     public double lowerBound() {
@@ -70,12 +71,12 @@ public abstract class FunctionDataCurve implements DataSet {
     public abstract double fX(double x);
     
     @Override
-    public double getPoint(int index) {
+    public double getFxPoint(int index) {
         return points[index];
     }
     
     @Override
-    public double[] getAllPoints() {
+    public double[] getAllFxPoints() {
         int npoints = points.length;
         double[] retArray = new double[npoints];
         System.arraycopy(points, 0, retArray, 0, npoints);
@@ -136,7 +137,24 @@ public abstract class FunctionDataCurve implements DataSet {
     }
     
     @Override
+    public double[] getX() {
+        double[] copyX = new double[x.length];
+        System.arraycopy(x, 0, copyX, 0, x.length);
+        return copyX;
+    }
+    
+    @Override
     public boolean halfWidthEnds() {
         return halfWidthEnd;
+    }
+    
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder(String.format("Function f(x) curve with %d points from lower bound %9.3g and upper bound %9.3g", points.length, lb, ub));
+        if (halfWidthEnd) {
+            sb.append(" and half-width start/end bins");
+        }
+        sb.append(".");
+        return sb.toString();
     }
 }
